@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EduTrack Pulse - Student Monthly Performance &amp; Rewards Tracker</title>
+  <meta name="description" content="Monthly student grade tracker with role-based admin CRUD, student of the month spotlight, quiz gift reward qualification, and progress trajectory tracking.">
+  
+  <!-- Modern Typography + Arabic Google Font (Cairo) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-theme">
+  <!-- Toast Notifications Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Background Decorative Blurs -->
+  <div class="glow-orb orb-primary"></div>
+  <div class="glow-orb orb-secondary"></div>
+
+  <!-- Main Navigation Header -->
+  <header class="app-header">
+    <div class="container header-container">
+      <div class="brand" id="brand-logo-trigger" role="button" tabindex="0" title="EduTrack Pulse">
+        <div class="brand-icon">
+          <svg class="svg-icon xl" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        </div>
+        <div>
+          <h1 class="brand-title"><span data-i18n="brandPrefix">EduTrack</span> <span class="highlight" data-i18n="brandHighlight">Pulse</span></h1>
+          <p class="brand-subtitle" data-i18n="brandSubtitle">Monthly Academic Performance &amp; Rewards Hub</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <!-- Selected Month Switcher (Admin Only) -->
+        <div class="control-group admin-only" id="month-control-group">
+          <label for="month-select" class="control-label" data-i18n="academicMonth">Academic Month:</label>
+          <div class="select-wrapper">
+            <select id="month-select" class="custom-select" aria-label="Select Academic Month">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+        </div>
+
+        <!-- MongoDB Atlas Live Connection Status (Admin Only) -->
+        <div id="db-status-badge" class="db-pill connecting admin-only" title="MongoDB Atlas Cloud Database Status">
+          <span class="db-dot"></span>
+          <span id="db-status-text" data-i18n="cloudDbConnecting">Cloud DB: Connecting...</span>
+        </div>
+
+        <!-- Role Badge & Admin Mode Toggle (Hidden from visitors; visible only when logged in as Admin) -->
+        <div class="role-switcher" id="role-switcher-container" style="display: none;">
+          <span id="role-status-badge" class="role-pill admin">
+            <span class="role-dot"></span>
+            <span id="current-role-label" data-i18n="adminMode">Admin Mode</span>
+          </span>
+          <button id="btn-toggle-admin" class="btn btn-outline" title="Exit Admin Mode">
+            <span id="admin-btn-icon">
+              <svg class="svg-icon sm" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+            </span>
+            <span id="admin-btn-text" data-i18n="exitAdmin">Exit Admin</span>
+          </button>
+        </div>
+
+        <!-- Language Switcher (AR / EN) -->
+        <button id="lang-toggle-btn" class="btn btn-outline lang-btn" aria-label="Toggle Language" title="تغيير اللغة / Switch Language">
+          <span class="lang-icon">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          </span>
+          <span id="lang-btn-text">العربية</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    
+    <!-- Hero / Monthly Highlights Section -->
+    <section class="highlights-grid">
+      <!-- 1. Student of the Month Spotlight Card -->
+      <div class="card spotlight-card" id="student-of-the-month-card">
+        <div class="spotlight-badge">
+          <span class="crown"><svg class="svg-icon sm" viewBox="0 0 24 24"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg></span> <span data-i18n="studentOfTheMonth">Student of the Month</span>
+        </div>
+        <div class="spotlight-content" id="spotlight-content">
+          <!-- Rendered via JS -->
+          <div class="spotlight-loading" data-i18n="spotlightEvaluating">Evaluating monthly rankings...</div>
+        </div>
+        <div class="spotlight-footer">
+          <span class="footer-hint" data-i18n="spotlightHint">Based on top monthly score &amp; quiz consistency</span>
+          <button id="btn-celebrate" class="btn btn-sm btn-gold" title="Trigger Confetti Celebration">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/></svg> <span data-i18n="celebrate">Celebrate</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. Gift & Reward Club Card (Quiz % >= 16%) -->
+      <div class="card reward-card" id="gift-club-card">
+        <div class="card-header-flex">
+          <div class="header-with-badge">
+            <span class="card-icon gift-pulse">
+              <svg class="svg-icon lg" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13m7-9v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.5 4.5 0 0 1 12 7.5a4.5 4.5 0 0 1 4.5-4.5 2.5 2.5 0 0 1 0 5"/></svg>
+            </span>
+            <div>
+              <h2 class="card-title" data-i18n="giftClubTitle">Gift Award Club</h2>
+              <p class="card-desc"><span data-i18n="giftClubDesc">Students with Quiz Score</span> <span class="highlight-pill">&ge; <span id="gift-threshold-display">16%</span></span></p>
+            </div>
+          </div>
+          <span id="gift-count-badge" class="counter-badge">0 Winners</span>
+        </div>
+        
+        <div class="gift-qualified-list" id="gift-qualified-list">
+          <!-- List of students qualifying for gifts -->
+        </div>
+
+        <div class="reward-card-footer">
+          <span class="reward-note" data-i18n="giftRewardNote"><svg class="svg-icon xs" viewBox="0 0 24 24" style="color: #fbbf24;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Qualified students receive special monthly awards &amp; recognition gifts!</span>
+        </div>
+      </div>
+
+      <!-- 3. Progress Velocity & Momentum Tracker Summary -->
+      <div class="card momentum-card" id="momentum-summary-card">
+        <div class="card-header-flex">
+          <div class="header-with-badge">
+            <span class="card-icon momentum-pulse">
+              <svg class="svg-icon lg" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+            </span>
+            <div>
+              <h2 class="card-title" data-i18n="classMomentum">Class Momentum</h2>
+              <p class="card-desc" data-i18n="classMomentumDesc">Trajectory vs. Previous Month</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="momentum-stats-row">
+          <div class="momentum-stat-item forward">
+            <div class="stat-number-wrapper">
+              <span class="stat-icon"><svg class="svg-icon md" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></span>
+              <span class="stat-number" id="stat-forward-count">0</span>
+            </div>
+            <div class="stat-label" data-i18n="movingForward">Moving Forward</div>
+            <div class="stat-sub" data-i18n="scoresImproved">Scores improved</div>
+          </div>
+
+          <div class="momentum-stat-item backward">
+            <div class="stat-number-wrapper">
+              <span class="stat-icon"><svg class="svg-icon md" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg></span>
+              <span class="stat-number" id="stat-backward-count">0</span>
+            </div>
+            <div class="stat-label" data-i18n="goingBack">Going Back</div>
+            <div class="stat-sub" data-i18n="needsAttention">Needs attention</div>
+          </div>
+
+          <div class="momentum-stat-item stagnant">
+            <div class="stat-number-wrapper">
+              <span class="stat-icon"><svg class="svg-icon md" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+              <span class="stat-number" id="stat-stagnant-count">0</span>
+            </div>
+            <div class="stat-label" data-i18n="notWorking">Not Working</div>
+            <div class="stat-sub" data-i18n="stagnantLowEffort">Stagnant / Low effort</div>
+          </div>
+        </div>
+
+        <div class="class-average-bar">
+          <div class="avg-label-row">
+            <span data-i18n="classAverageGrade">Class Average Grade:</span>
+            <span id="class-avg-display" class="avg-score">0.0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="class-avg-progress-bar" class="progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filter & Action Toolbar -->
+    <section class="toolbar-section card admin-only">
+      <div class="toolbar-left">
+        <!-- Search -->
+        <div class="search-box">
+          <span class="search-icon"><svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+          <input type="text" id="student-search-input" placeholder="Search by student name or ID..." data-i18n-placeholder="searchPlaceholder" aria-label="Search student">
+          <button id="clear-search-btn" class="clear-btn" style="display: none;" title="Clear search">&times;</button>
+        </div>
+
+        <!-- Filter Pills -->
+        <div class="filter-pills" role="radiogroup" aria-label="Filter Trajectory">
+          <button class="filter-pill active" data-filter="all"><svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87m-3-12a4 4 0 0 1 0 7.75"/></svg> <span data-i18n="filterAll">All</span> (<span id="count-all">0</span>)</button>
+          <button class="filter-pill" data-filter="forward"><svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> <span data-i18n="filterForward">Moving Forward</span> (<span id="count-forward">0</span>)</button>
+          <button class="filter-pill" data-filter="backward"><svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg> <span data-i18n="filterBackward">Going Back</span> (<span id="count-backward">0</span>)</button>
+          <button class="filter-pill" data-filter="stagnant"><svg class="svg-icon sm" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> <span data-i18n="filterStagnant">Not Working</span> (<span id="count-stagnant">0</span>)</button>
+          <button class="filter-pill" data-filter="gift"><svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13m7-9v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.5 4.5 0 0 1 12 7.5a4.5 4.5 0 0 1 4.5-4.5 2.5 2.5 0 0 1 0 5"/></svg> <span data-i18n="filterGift">Gift Qualified</span> (<span id="count-gift">0</span>)</button>
+        </div>
+      </div>
+
+      <div class="toolbar-right">
+        <!-- View Mode Switcher (Table View is restricted to Admin) -->
+        <div class="view-toggle-group admin-only">
+          <button id="btn-view-grid" class="view-btn active" title="Grid Cards View" aria-label="Grid View">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> <span data-i18n="viewCards">Cards</span>
+          </button>
+          <button id="btn-view-table" class="view-btn admin-only" title="Detailed Table View (Admin Only)" aria-label="Table View">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 3v18M3 9h18M3 15h18"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg> <span data-i18n="viewTable">Table</span>
+          </button>
+        </div>
+
+        <!-- Admin Only Action: Add Student Button -->
+        <div class="admin-actions-wrap">
+          <button id="btn-add-student" class="btn btn-primary" title="Add New Student (Admin only)">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8m-4-4v8"/></svg> <span data-i18n="addStudent">Add Student</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Student Roster Views (Admin Only) -->
+    <section class="roster-section admin-only">
+      <!-- Grid Card View -->
+      <div id="students-grid-view" class="students-grid">
+        <!-- Dynamically injected student cards -->
+      </div>
+
+      <!-- Detailed Table View (Admin Only - completely absent for visitors) -->
+      <div id="students-table-view" class="table-container card admin-only" style="display: none;">
+        <table class="data-table" id="students-table">
+          <thead>
+            <tr>
+              <th data-i18n="thStudent">Student</th>
+              <th data-i18n="thGradeLevel">Class/Grade</th>
+              <th data-i18n="thQuizResult">Quiz Result</th>
+              <th data-i18n="thQuizPct">Quiz %</th>
+              <th data-i18n="thGiftStatus">Gift Status</th>
+              <th data-i18n="thMonthlyScore">Monthly Score</th>
+              <th data-i18n="thTrajectory">Trajectory</th>
+              <th data-i18n="thRemarks">Remarks</th>
+              <th class="admin-col" data-i18n="thActions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="students-table-body">
+            <!-- Dynamically populated rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="empty-state card" style="display: none;">
+        <div class="empty-icon">
+          <svg class="svg-icon xl" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+        </div>
+        <h3 class="empty-title" id="empty-state-title" data-i18n="noStudentsFound">No Students Found</h3>
+        <p class="empty-desc" id="empty-state-desc" data-i18n="noStudentsFoundDesc">No students match your current search or filter criteria for this month.</p>
+        <div id="empty-state-actions" style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+          <button id="btn-reset-filters" class="btn btn-outline" data-i18n="resetFilters">Reset Filters</button>
+          <button id="btn-empty-add-student" class="btn btn-primary" style="display: none;" data-i18n="addStudent">+ Add Student</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Legend / Explanations (Admin Only) -->
+    <footer class="system-legend card admin-only">
+      <div class="legend-header">
+        <h4 data-i18n="rulesTitle">System Rules &amp; Performance Criteria</h4>
+      </div>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <span class="legend-badge gift-badge">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13m7-9v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.5 4.5 0 0 1 12 7.5a4.5 4.5 0 0 1 4.5-4.5 2.5 2.5 0 0 1 0 5"/></svg> <span data-i18n="giftAwardBadge">Gift Award</span>
+          </span>
+          <p data-i18n="giftRuleDesc">Granted when a student achieves <strong>&ge; 16%</strong> (or higher) on their monthly quiz test.</p>
+        </div>
+        <div class="legend-item">
+          <span class="legend-badge forward-badge">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> <span data-i18n="movingForward">Moving Forward</span>
+          </span>
+          <p data-i18n="forwardRuleDesc">Student is progressing! Monthly score increased compared to the previous month.</p>
+        </div>
+        <div class="legend-item">
+          <span class="legend-badge backward-badge">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg> <span data-i18n="goingBack">Going Back</span>
+          </span>
+          <p data-i18n="backwardRuleDesc">Regression alert! Monthly score dropped from the previous month. Requires teacher guidance.</p>
+        </div>
+        <div class="legend-item">
+          <span class="legend-badge stagnant-badge">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> <span data-i18n="notWorking">Not Working</span>
+          </span>
+          <p data-i18n="stagnantRuleDesc">Student is inactive, showed 0 progress, or grades consistently below minimum passing standards.</p>
+        </div>
+      </div>
+      <div class="legend-bottom-actions">
+        <button id="btn-export-data" class="btn btn-xs btn-outline">
+          <svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3"/></svg> <span data-i18n="exportData">Export Data (JSON)</span>
+        </button>
+        <button id="btn-clear-all" class="btn btn-xs btn-outline admin-only" title="Clear all students">
+          <svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg> <span data-i18n="clearAllData">Clear All Data</span>
+        </button>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. Admin Authentication Modal -->
+  <div id="modal-admin-auth" class="modal-backdrop" aria-hidden="true">
+    <div class="modal card" role="dialog" aria-labelledby="auth-modal-title">
+      <div class="modal-header">
+        <h3 id="auth-modal-title" class="modal-title">
+          <svg class="svg-icon md" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> <span data-i18n="authModalTitle">Admin Authentication</span>
+        </h3>
+        <button class="modal-close-btn" data-close="modal-admin-auth">&times;</button>
+      </div>
+      <form id="admin-auth-form" class="modal-body">
+        <p class="modal-instruction" data-i18n="authInstruction">Only verified administrators can Add, Edit, Delete students or enter monthly quiz marks.</p>
+        <div class="form-group">
+          <label for="admin-pin-input" data-i18n="enterPasscode">Enter Admin Passcode:</label>
+          <input type="password" id="admin-pin-input" class="form-input" placeholder="Enter PIN (Default: admin123)" data-i18n-placeholder="pinPlaceholder" required autocomplete="current-password">
+          <span class="form-hint" data-i18n="passcodeHint">Tip: Default passcode is <code>admin123</code></span>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" data-close="modal-admin-auth" data-i18n="cancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-i18n="authenticateBtn">Authenticate as Admin</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Create / Edit Student Modal -->
+  <div id="modal-student-crud" class="modal-backdrop" aria-hidden="true">
+    <div class="modal card modal-md" role="dialog" aria-labelledby="crud-modal-title">
+      <div class="modal-header">
+        <h3 id="crud-modal-title" class="modal-title">
+          <svg class="svg-icon md" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg> <span id="crud-modal-title-text" data-i18n="addStudentTitle">Add New Student</span>
+        </h3>
+        <button class="modal-close-btn" data-close="modal-student-crud">&times;</button>
+      </div>
+      <form id="student-crud-form" class="modal-body">
+        <input type="hidden" id="student-edit-id" value="">
+        <input type="hidden" id="student-avatar-url" value="">
+        
+        <!-- Student Photo / Image Section -->
+        <div class="photo-upload-section">
+          <label class="form-section-label" data-i18n="studentPhotoLabel">Student Photo / Avatar</label>
+          <div class="photo-upload-wrapper">
+            <!-- Live Avatar Preview with fallback -->
+            <div id="crud-avatar-preview" class="avatar-circle lg avatar-indigo" title="Student Photo Preview (Drag & Drop image here)">
+              <img id="crud-avatar-img" class="avatar-img" src="" alt="Student Photo" style="display: none;">
+              <span id="crud-avatar-fallback" class="avatar-fallback">?</span>
+            </div>
+            
+            <div class="photo-controls">
+              <input type="file" id="student-photo-file-input" accept="image/png, image/jpeg, image/webp, image/gif" style="display: none;">
+              
+              <div class="photo-btn-row">
+                <button type="button" id="btn-trigger-file-upload" class="btn btn-sm btn-outline">
+                  <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> <span data-i18n="choosePhotoBtn">Choose Photo File</span>
+                </button>
+                <button type="button" id="btn-remove-photo" class="btn btn-sm btn-ghost text-danger" style="display: none;">
+                  <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg> <span data-i18n="removePhotoBtn">Remove Photo</span>
+                </button>
+              </div>
+
+              <!-- Direct URL or Path Input -->
+              <div class="photo-url-wrapper">
+                <input type="text" id="student-image-url-input" class="form-input form-input-sm" placeholder="Or enter image URL (e.g. https://... or images/avatar.jpg)" data-i18n-placeholder="photoUrlPlaceholder">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label for="student-name-input" data-i18n="fullNameLabel">Full Name *</label>
+            <input type="text" id="student-name-input" class="form-input" placeholder="e.g. Alex Johnson" data-i18n-placeholder="fullNamePlaceholder" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="student-code-input" data-i18n="studentCodeLabel">Student ID / Code</label>
+            <input type="text" id="student-code-input" class="form-input" placeholder="e.g. STU-101" data-i18n-placeholder="studentCodePlaceholder">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="student-grade-level" data-i18n="gradeLevelLabel">Class / Grade Level</label>
+            <input type="text" id="student-grade-level" class="form-input" placeholder="e.g. Grade 10-A" data-i18n-placeholder="gradeLevelPlaceholder" value="Grade 10-A">
+          </div>
+          <div class="form-group flex-1">
+            <label for="student-avatar-color" data-i18n="avatarAccentLabel">Avatar Accent</label>
+            <select id="student-avatar-color" class="custom-select">
+              <option value="indigo">Indigo Glow</option>
+              <option value="emerald">Emerald Green</option>
+              <option value="amber">Warm Amber</option>
+              <option value="rose">Rose Red</option>
+              <option value="cyan">Cyan Electric</option>
+              <option value="purple">Royal Purple</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="student-notes-input" data-i18n="teacherNotesLabel">Teacher Notes / Background</label>
+          <textarea id="student-notes-input" class="form-input textarea" rows="2" placeholder="e.g. Strong in logic, needs motivation in homework..." data-i18n-placeholder="teacherNotesPlaceholder"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" data-close="modal-student-crud" data-i18n="cancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-student" data-i18n="saveStudentBtn">Save Student</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Record Monthly Grades & Quiz Score Modal -->
+  <div id="modal-grade-entry" class="modal-backdrop" aria-hidden="true">
+    <div class="modal card modal-md" role="dialog" aria-labelledby="grade-modal-title">
+      <div class="modal-header">
+        <div>
+          <h3 id="grade-modal-title" class="modal-title">
+            <svg class="svg-icon md" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg> <span data-i18n="recordGradeTitle">Record Monthly Performance</span>
+          </h3>
+          <p id="grade-modal-student-name" class="modal-subtitle">Student: Alex Johnson</p>
+        </div>
+        <button class="modal-close-btn" data-close="modal-grade-entry">&times;</button>
+      </div>
+      <form id="grade-entry-form" class="modal-body">
+        <input type="hidden" id="grade-student-id" value="">
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="grade-month-select" data-i18n="targetMonthLabel">Target Month *</label>
+            <select id="grade-month-select" class="custom-select" required>
+              <!-- dynamically populated -->
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label for="grade-attendance-status" data-i18n="attendanceLabel">Effort &amp; Attendance</label>
+            <select id="grade-attendance-status" class="custom-select">
+              <option value="Active" data-i18n="attendanceActive">Active &amp; Attentive</option>
+              <option value="Average" data-i18n="attendanceAverage">Average Participation</option>
+              <option value="Low" data-i18n="attendanceLow">Low Effort / Irregular</option>
+              <option value="Absent" data-i18n="attendanceAbsent">Repeated Absences</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Multi-Quiz / Test Evaluation (Percentage depends on all tests) -->
+        <div class="card p-3 inner-quiz-card">
+          <div class="quiz-card-header">
+            <div>
+              <h4 class="inner-card-title">
+                <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M10 2v7.31L4.1 19.34A2 2 0 0 0 5.8 22h12.4a2 2 0 0 0 1.7-2.66L14 9.31V2m-5.5 0h7M6.5 15h11"/></svg> <span data-i18n="quizzesSectionTitle">Monthly Quizzes &amp; Tests</span>
+              </h4>
+              <p class="inner-card-subtitle" data-i18n="quizzesSectionSubtitle">Add all tests/quizzes for this month. The combined quiz percentage is calculated from all tests.</p>
+            </div>
+            <button type="button" id="btn-add-quiz-row" class="btn btn-xs btn-outline btn-gold" title="Add another test or quiz">
+              <svg class="svg-icon xs" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> <span data-i18n="addQuizRowBtn">+ Add Test / Quiz</span>
+            </button>
+          </div>
+
+          <!-- Column Header Labels -->
+          <div class="quiz-rows-header">
+            <span class="quiz-col-hdr-name" data-i18n="hdrQuizTitle">Test / Quiz Title</span>
+            <span class="quiz-col-hdr-score" data-i18n="hdrScoreAchieved">Score Achieved</span>
+            <span class="quiz-col-hdr-max" data-i18n="hdrTotalMax">Total Max</span>
+            <span class="quiz-col-hdr-pct" data-i18n="hdrQuizPct">%</span>
+            <span class="quiz-col-hdr-action"></span>
+          </div>
+
+          <!-- Dynamic Quiz Rows List -->
+          <div id="quiz-rows-list" class="quiz-rows-list">
+            <!-- Dynamically populated via JS -->
+          </div>
+
+          <!-- Combined Calculation Summary Box -->
+          <div class="quiz-cumulative-summary">
+            <div class="summary-stat-box">
+              <span class="summary-label" data-i18n="totalPointsLabel">Total Points</span>
+              <span id="quiz-total-points-display" class="summary-val">0 / 0</span>
+            </div>
+            <div class="summary-stat-box highlight">
+              <span class="summary-label" data-i18n="combinedQuizPctLabel">Combined Quiz %</span>
+              <span id="quiz-calc-preview" class="summary-val">0.0%</span>
+            </div>
+            <div class="summary-stat-box flex-2">
+              <span class="summary-label" data-i18n="giftQualificationLabel">Gift Qualification (&ge;16%)</span>
+              <div id="quiz-gift-indicator" class="gift-preview-indicator">
+                <span id="quiz-gift-status-text" data-i18n="enterScoresPrompt">Enter test scores</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row mt-3">
+          <div class="form-group flex-1">
+            <label data-i18n="overallGradeLabel">Overall Monthly Score (0 - 100)</label>
+            <!-- Auto-calculated from quiz/test scores — not editable -->
+            <div id="overall-score-display" class="auto-calc-display">
+              <span id="overall-score-value">—</span>
+              <span class="auto-calc-badge">⚡ Auto-calculated</span>
+            </div>
+            <!-- Hidden input carries the value for form submission -->
+            <input type="hidden" id="overall-grade-input" value="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="grade-comment-input" data-i18n="remarksLabel">Monthly Feedback / Remarks</label>
+          <input type="text" id="grade-comment-input" class="form-input" placeholder="e.g. Outstanding analytical thinking this month!" data-i18n-placeholder="remarksPlaceholder">
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" data-close="modal-grade-entry" data-i18n="cancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-grades" data-i18n="saveGradesBtn">Save Monthly Grade</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Student Detailed Profile & Trajectory History Modal -->
+  <div id="modal-student-detail" class="modal-backdrop" aria-hidden="true">
+    <div class="modal card modal-lg" role="dialog" aria-labelledby="detail-modal-name">
+      <div class="modal-header">
+        <div class="student-detail-header">
+          <div id="detail-avatar" class="avatar-circle lg">
+            <img id="detail-avatar-img" class="avatar-img" src="" alt="Student Profile" style="display: none;">
+            <span id="detail-avatar-fallback" class="avatar-fallback">A</span>
+          </div>
+          <div>
+            <h3 id="detail-modal-name" class="modal-title" data-i18n="studentProfileTitle">Student Profile</h3>
+            <span id="detail-modal-id" class="code-badge">STU-101</span>
+            <span id="detail-modal-grade" class="class-badge">Grade 10-A</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close="modal-student-detail">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Monthly History Trend Cards -->
+        <h4 class="section-subheading">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> <span data-i18n="monthProgressTitle">Month-by-Month Progress &amp; Gifts</span>
+        </h4>
+        <div id="detail-history-container" class="detail-history-grid">
+          <!-- History items dynamically populated -->
+        </div>
+
+        <!-- Trajectory Insights Box -->
+        <div class="trajectory-insight-box mt-3" id="detail-trajectory-insights">
+          <!-- Dynamically populated analysis -->
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-close="modal-student-detail" data-i18n="closeBtn">Close</button>
+        <button type="button" id="btn-detail-add-grade" class="btn btn-primary admin-only-btn">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> <span data-i18n="addMonthGradeBtn">Add Month Grade</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Delete Confirmation Modal -->
+  <div id="modal-delete-confirm" class="modal-backdrop" aria-hidden="true">
+    <div class="modal card modal-sm" role="dialog" aria-labelledby="delete-confirm-title">
+      <div class="modal-header">
+        <h3 id="delete-confirm-title" class="modal-title">
+          <svg class="svg-icon md" viewBox="0 0 24 24" style="color: #f43f5e;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> <span data-i18n="confirmDeletionTitle">Confirm Deletion</span>
+        </h3>
+        <button class="modal-close-btn" data-close="modal-delete-confirm">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="delete-confirm-prompt-msg">Are you sure you want to delete <strong id="delete-student-name">this student</strong> and all associated monthly records?</p>
+        <p class="warning-text" data-i18n="deleteWarningText">This action cannot be undone.</p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-close="modal-delete-confirm" data-i18n="cancelBtn">Cancel</button>
+        <button type="button" id="btn-confirm-delete" class="btn btn-danger" data-i18n="deletePermanentlyBtn">Delete Permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas Confetti Library for Celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
