@@ -610,11 +610,11 @@
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1'
   );
-  const API_BASE = (isLocalDev && window.location.protocol === 'file:')
-    ? 'http://localhost:3000/api'
-    : (isLocalDev && window.location.port && window.location.port !== '3000')
-      ? 'http://localhost:3000/api'
-      : '/api';
+
+  // When hosted on GitHub Pages (or any non-localhost origin), point to Render backend
+  const RENDER_API = 'https://student-day.onrender.com/api';
+
+  const API_BASE = isLocalDev ? 'http://localhost:3000/api' : RENDER_API;
 
   function updateDbStatus(status, textKey, defaultText) {
     if (!elements.dbStatusBadge || !elements.dbStatusText) return;
