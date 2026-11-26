@@ -313,11 +313,10 @@
         <button class="modal-close-btn" data-close="modal-admin-auth">&times;</button>
       </div>
       <form id="admin-auth-form" class="modal-body">
-        <p class="modal-instruction" data-i18n="authInstruction">Only verified administrators can Add, Edit, Delete students or enter monthly quiz marks.</p>
+        <p class="modal-instruction" data-i18n="authInstruction">For admin access only.</p>
         <div class="form-group">
           <label for="admin-pin-input" data-i18n="enterPasscode">Enter Admin Passcode:</label>
-          <input type="password" id="admin-pin-input" class="form-input" placeholder="Enter PIN (Default: admin123)" data-i18n-placeholder="pinPlaceholder" required autocomplete="current-password">
-          <span class="form-hint" data-i18n="passcodeHint">Tip: Default passcode is <code>admin123</code></span>
+          <input type="password" id="admin-pin-input" class="form-input" placeholder="Enter passcode" data-i18n-placeholder="pinPlaceholder" required autocomplete="current-password">
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" data-close="modal-admin-auth" data-i18n="cancelBtn">Cancel</button>
