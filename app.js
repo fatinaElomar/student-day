@@ -22,11 +22,11 @@
   const ROLE_STORAGE_KEY = 'edutrack_admin_session';
   const LANG_STORAGE_KEY = 'edutrack_lang_pref';
   const ADMIN_PASSCODE = 'admin123';
-  const GIFT_REQUIRED_GOOD_QUIZZES = 10; // Must have 10 good quizzes to unlock a gift
-  const GOOD_QUIZ_THRESHOLD_PERCENT = 70.0; // Quiz score > 70% counts as a "good quiz" star
+  const GIFT_REQUIRED_QUIZZES = 10; // Must complete 10 quizzes
+  const GIFT_MIN_AVG_PERCENT = 70.0; // Combined final average across quizzes must be >= 70%
 
-  function isGoodQuizPercent(pct) {
-    return Number(pct) > GOOD_QUIZ_THRESHOLD_PERCENT;
+  function isAvgEligiblePercent(pct) {
+    return Number(pct) >= GIFT_MIN_AVG_PERCENT;
   }
 
   // =========================================================================
@@ -140,14 +140,14 @@
       monthFilterLabel: 'Month Filter:',
       currentMonthBtn: 'Current Month',
       previousMonthBtn: 'Previous Month',
-      giftClubTitle: 'Gift Quest Arena',
-      giftClubDesc: 'Collect',
-      goodQuizzesLabel: 'Good Quizzes',
-      goodQuizMinHint: '(> 70% each)',
-      goodQuizzesMonthLabel: 'Good Quizzes (> 70%)',
+      giftClubTitle: 'Will Get a Gift',
+      giftClubDesc: 'Complete',
+      goodQuizzesLabel: 'Quizzes',
+      goodQuizMinHint: '(Combined Avg ≥ 70%)',
+      goodQuizzesMonthLabel: 'Quizzes Count',
       qualifiedCount: '{n} Unlocked',
-      giftRewardNote: 'Complete 10 good quizzes (> 70%) to unlock your special reward gift!',
-      noGiftWinners: 'Add students or record quizzes (> 70%) to start the 10-star Gift Quest!',
+      giftRewardNote: 'Complete 10 quizzes with a combined average ≥ 70% to win your reward gift!',
+      noGiftWinners: 'Add students or record quizzes to track the 10-quiz (≥70%) reward race!',
       classMomentum: 'Class Momentum',
       classMomentumDesc: 'Trajectory vs. Previous Month',
       movingForward: 'Moving Forward',
@@ -182,7 +182,7 @@
       resetFilters: 'Reset Filters',
       rulesTitle: 'System Rules & Performance Criteria',
       giftAwardBadge: 'Gift Award',
-      giftRuleDesc: 'Unlocked when a student completes 10 good quizzes (> 70% each).',
+      giftRuleDesc: 'Unlocked when a student completes 10 quizzes with a combined final average ≥ 70%.',
       forwardRuleDesc: 'Student is progressing! Monthly score increased compared to the previous month.',
       backwardRuleDesc: 'Regression alert! Monthly score dropped from the previous month. Requires teacher guidance.',
       stagnantRuleDesc: 'Student is inactive, showed 0 progress, or grades consistently below minimum passing standards.',
@@ -201,8 +201,8 @@
       adminOnly: '🔒 Admin Only',
       notGraded: 'Not Graded',
       topStudentRibbon: 'Top Student',
-      giftQualified: 'Gift Unlocked!',
-      noGift: 'In Quest',
+      giftQualified: 'Will Get Gift!',
+      noGift: 'In Progress',
       viewProfile: 'Profile',
       gradeBtn: 'Grade',
       editBtn: 'Edit',
@@ -246,10 +246,10 @@
       hdrQuizPct: '%',
       totalPointsLabel: 'Total Points',
       combinedQuizPctLabel: 'Combined Quiz %',
-      giftQualificationLabel: 'Gift Quest (10 Good Quizzes)',
+      giftQualificationLabel: 'Gift Goal (10 Quizzes & ≥70%)',
       enterScoresPrompt: 'Enter test scores',
-      qualifiedGiftMsg: 'Gift Unlocked! (10/10 Good Quizzes)',
-      notQualifiedGiftMsg: '{n}/10 Good Quizzes (>70%)',
+      qualifiedGiftMsg: 'Will Get Gift! (10+ Quizzes & Avg ≥70%)',
+      notQualifiedGiftMsg: '{n}/10 Quizzes • Avg {avg}%',
       overallGradeLabel: 'Overall Monthly Score (0 - 100) *',
       useQuizPctBtn: 'Use Quiz %',
       remarksLabel: 'Monthly Feedback / Remarks',
@@ -308,14 +308,14 @@
       monthFilterLabel: 'تصفية الشهر:',
       currentMonthBtn: 'الشهر الحالي',
       previousMonthBtn: 'الشهر السابق',
-      giftClubTitle: 'ساحة سباق الهدايا',
-      giftClubDesc: 'اجمع',
-      goodQuizzesLabel: 'اختبارات متميزة',
-      goodQuizMinHint: '(أعلى من 70% لكل اختبار)',
-      goodQuizzesMonthLabel: 'اختبارات متميزة (>70%)',
+      giftClubTitle: 'سيحصل على جائزة',
+      giftClubDesc: 'أتم',
+      goodQuizzesLabel: 'مسابقات',
+      goodQuizMinHint: '(بمعدل نهائي 70% أو فوق)',
+      goodQuizzesMonthLabel: 'عدد المسابقات',
       qualifiedCount: '{n} فائز',
-      giftRewardNote: 'أكمل 10 اختبارات متميزة (أعلى من 70%) لفتح هديتك التقديرية!',
-      noGiftWinners: 'أضف طلاباً أو رصد درجات اختبارات (>70%) لبدء سباق الـ 10 نجوم!',
+      giftRewardNote: 'يجب أن يتم التلميذ 10 مسابقات بمعدلها النهائي 70% أو فوق ليحصل على المكافأة!',
+      noGiftWinners: 'أضف طلاباً أو رصد نتائج المسابقات لمتابعة سباق الـ 10 مسابقات (70%+)!',
       classMomentum: 'مؤشر تقدم الفصل',
       classMomentumDesc: 'المسار مقارنة بالشهر السابق',
       movingForward: 'تقدم مستمر',
@@ -350,7 +350,7 @@
       resetFilters: 'إعادة تعيين الفلاتر',
       rulesTitle: 'قواعد النظام ومعايير الأداء الأكاديمي',
       giftAwardBadge: 'جائزة التميز',
-      giftRuleDesc: 'تُفتح الهدية عند إكمال الطالب 10 اختبارات متميزة (أعلى من 70% لكل اختبار).',
+      giftRuleDesc: 'تُفتح المكافأة عند إتمام 10 مسابقات بمعدلها النهائي 70% أو فوق.',
       forwardRuleDesc: 'الطالب في مسار تصاعدي! ارتفعت درجاته مقارنة بالشهر السابق.',
       backwardRuleDesc: 'تنبيه تراجع! انخفضت الدرجة عن الشهر السابق، يحتاج إلى دعم وإرشاد.',
       stagnantRuleDesc: 'الطالب غير نشط، لم يحرز تقدماً، أو درجاته دون مستوى النجاح.',
@@ -369,8 +369,8 @@
       adminOnly: '🔒 للمسؤول فقط',
       notGraded: 'لم يُرصد بعد',
       topStudentRibbon: 'طالب الشهر',
-      giftQualified: 'فاز بالهدية!',
-      noGift: 'في السباق',
+      giftQualified: 'سيحصل على جائزة!',
+      noGift: 'قيد التقدم',
       viewProfile: 'الملف الشخصي',
       gradeBtn: 'رصد الدرجات',
       editBtn: 'تعديل',
@@ -414,10 +414,10 @@
       hdrQuizPct: '%',
       totalPointsLabel: 'مجموع النقاط',
       combinedQuizPctLabel: 'نسبة الاختبارات المجمعة',
-      giftQualificationLabel: 'سباق الهدية (10 اختبارات متميزة)',
-      enterScoresPrompt: 'أدخل درجات الاختبار',
-      qualifiedGiftMsg: 'تم فتح الهدية! (10/10 اختبارات متميزة)',
-      notQualifiedGiftMsg: '{n}/10 اختبارات متميزة (>70%)',
+      giftQualificationLabel: 'شرط الجائزة (10 مسابقات و ≥70%)',
+      enterScoresPrompt: 'أدخل درجات المسابقات',
+      qualifiedGiftMsg: 'سيحصل على جائزة! (أتم 10 مسابقات ومعدله ≥70%)',
+      notQualifiedGiftMsg: '{n}/10 مسابقات • المعدل {avg}%',
       overallGradeLabel: 'الدرجة الشهرية العامة (0 - 100) *',
       useQuizPctBtn: 'استخدام نسبة الاختبار',
       remarksLabel: 'ملاحظات وتوجيهات الشهر',
@@ -1049,7 +1049,7 @@
   }
 
   // =========================================================================
-  // CALCULATION, GIFT QUEST (10 GOOD QUIZZES > 70%) & TRAJECTORY ENGINE
+  // CALCULATION, GIFT QUEST (10 QUIZZES + COMBINED AVG >= 70%) & TRAJECTORY
   // =========================================================================
   function getPreviousMonthKey(currentMonthKey) {
     const idx = AVAILABLE_MONTHS.findIndex(m => m.key === currentMonthKey);
@@ -1066,9 +1066,10 @@
       monthKeys.add(draftOverride.monthKey);
     }
 
-    let goodQuizzes = 0;
     let totalQuizzes = 0;
-    let goodQuizzesInTargetMonth = 0;
+    let totalScoreSum = 0;
+    let totalMaxSum = 0;
+    let quizzesInTargetMonth = 0;
 
     Array.from(monthKeys).sort().forEach(mKey => {
       if (upToMonthKey && mKey > upToMonthKey) return;
@@ -1091,60 +1092,104 @@
       quizzesList.forEach(q => {
         const maxNum = Number(q.maxScore) || 0;
         const scoreNum = Number(q.score) || 0;
-        if (maxNum <= 0) return;
-        // Skip unentered empty draft scores if maxScore was default but user left score blank
-        if (q.isEmpty) return;
+        if (maxNum <= 0 || q.isEmpty) return;
         totalQuizzes++;
-        const pct = (scoreNum / maxNum) * 100;
-        if (isGoodQuizPercent(pct)) {
-          goodQuizzes++;
-          if (upToMonthKey && mKey === upToMonthKey) {
-            goodQuizzesInTargetMonth++;
-          }
+        totalScoreSum += scoreNum;
+        totalMaxSum += maxNum;
+        if (upToMonthKey && mKey === upToMonthKey) {
+          quizzesInTargetMonth++;
         }
       });
     });
 
-    const hasGift = goodQuizzes >= GIFT_REQUIRED_GOOD_QUIZZES;
-    const giftsEarned = Math.floor(goodQuizzes / GIFT_REQUIRED_GOOD_QUIZZES);
-    const stepProgress = Math.min(GIFT_REQUIRED_GOOD_QUIZZES, goodQuizzes);
-    const remaining = Math.max(0, GIFT_REQUIRED_GOOD_QUIZZES - goodQuizzes);
-    const progressPercent = Math.min(100, Math.round((stepProgress / GIFT_REQUIRED_GOOD_QUIZZES) * 100));
+    const combinedAvg = totalMaxSum > 0 ? Number(((totalScoreSum / totalMaxSum) * 100).toFixed(1)) : 0;
+    const hasCompleted10 = totalQuizzes >= GIFT_REQUIRED_QUIZZES;
+    const avgMet = totalQuizzes > 0 && isAvgEligiblePercent(combinedAvg);
+    const hasGift = hasCompleted10 && avgMet;
+
+    const stepProgress = Math.min(GIFT_REQUIRED_QUIZZES, totalQuizzes);
+    const quizzesRemaining = Math.max(0, GIFT_REQUIRED_QUIZZES - totalQuizzes);
+    const avgRemaining = totalQuizzes > 0 ? Math.max(0, Number((GIFT_MIN_AVG_PERCENT - combinedAvg).toFixed(1))) : GIFT_MIN_AVG_PERCENT;
+    const quizProgressPercent = Math.min(100, Math.round((stepProgress / GIFT_REQUIRED_QUIZZES) * 100));
+    const avgBarPercent = Math.min(100, Math.max(0, combinedAvg));
 
     let tier = 'ready';
     if (hasGift) tier = 'unlocked';
-    else if (goodQuizzes >= 7) tier = 'almost';
-    else if (goodQuizzes >= 4) tier = 'leveling';
-    else if (goodQuizzes >= 1) tier = 'started';
+    else if (totalQuizzes >= 7 || (hasCompleted10 && !avgMet)) tier = 'almost';
+    else if (totalQuizzes >= 4) tier = 'leveling';
+    else if (totalQuizzes >= 1) tier = 'started';
 
     return {
-      goodQuizzes,
-      goodQuizzesInTargetMonth,
       totalQuizzes,
-      giftsEarned,
+      quizzesInTargetMonth,
+      combinedAvg,
+      hasCompleted10,
+      avgMet,
       hasGift,
       stepProgress,
-      remaining,
-      progressPercent,
+      quizzesRemaining,
+      avgRemaining,
+      quizProgressPercent,
+      avgBarPercent,
       tier
     };
   }
 
-  function renderQuestStepsHtml(goodQuizzes) {
-    const filled = Math.min(GIFT_REQUIRED_GOOD_QUIZZES, goodQuizzes);
-    const isUnlocked = goodQuizzes >= GIFT_REQUIRED_GOOD_QUIZZES;
+  function buildQuestRemainingText(quest) {
+    const isAr = (state.lang === 'ar');
+    if (quest.totalQuizzes === 0) {
+      return isAr
+        ? '🎮 ابدأ التحدي: أتم 10 مسابقات بمعدل 70% أو فوق!'
+        : '🎮 Complete 10 quizzes with ≥70% average to win!';
+    }
+    if (quest.hasGift) {
+      return isAr
+        ? `🎉 مبروك! أتم ${quest.totalQuizzes} مسابقة بمعدل ${quest.combinedAvg}% — سيحصل على الجائزة!`
+        : `🎉 ${quest.totalQuizzes} quizzes completed at ${quest.combinedAvg}% avg — Gift Unlocked!`;
+    }
+    if (quest.hasCompleted10 && !quest.avgMet) {
+      return isAr
+        ? `🎯 أتم 10/10! متبقي +${quest.avgRemaining}% ليصل المعدل إلى 70%`
+        : `🎯 10/10 done! Needs +${quest.avgRemaining}% avg to reach 70%`;
+    }
+    if (quest.avgMet) {
+      return isAr
+        ? `🔥 المعدل ${quest.combinedAvg}% (ممتاز) — متبقي ${quest.quizzesRemaining} مسابقات ليصل إلى 10!`
+        : `🔥 Avg ${quest.combinedAvg}% ✅ — ${quest.quizzesRemaining} more quizzes to reach 10!`;
+    }
+    return isAr
+      ? `⚡ متبقي ${quest.quizzesRemaining} مسابقات • متبقي +${quest.avgRemaining}% ليصل إلى 70%`
+      : `⚡ ${quest.quizzesRemaining} quizzes left • needs +${quest.avgRemaining}% to reach 70%`;
+  }
+
+  function renderQuestStepsHtml(quest) {
+    const filled = Math.min(GIFT_REQUIRED_QUIZZES, quest.totalQuizzes);
+    const isUnlocked = quest.hasGift;
     let stepsHtml = '';
-    for (let i = 1; i <= GIFT_REQUIRED_GOOD_QUIZZES; i++) {
+    for (let i = 1; i <= GIFT_REQUIRED_QUIZZES; i++) {
       const isEarned = i <= filled;
       const isNext = !isUnlocked && i === filled + 1;
       const cls = isEarned ? 'earned' : (isNext ? 'next' : '');
-      stepsHtml += `<div class="quest-step-dot ${cls}" title="${i}/${GIFT_REQUIRED_GOOD_QUIZZES}">${isEarned ? AppIcons.star : i}</div>`;
+      stepsHtml += `<div class="quest-step-dot ${cls}" title="${i}/${GIFT_REQUIRED_QUIZZES}">${isEarned ? AppIcons.star : i}</div>`;
     }
+    const barFillClass = isUnlocked ? 'unlocked' : (quest.avgMet ? 'avg-met' : '');
+    const isAr = (state.lang === 'ar');
+
     return `
       <div class="quest-steps-row">
         <div class="quest-steps-track">${stepsHtml}</div>
-        <div class="quest-chest-node ${isUnlocked ? 'unlocked' : ''}" title="${isUnlocked ? t('giftQualified') : `${filled}/${GIFT_REQUIRED_GOOD_QUIZZES}`}">
+        <div class="quest-chest-node ${isUnlocked ? 'unlocked' : ''}" title="${isUnlocked ? t('giftQualified') : `${filled}/${GIFT_REQUIRED_QUIZZES}`}">
           ${AppIcons.gift}
+        </div>
+      </div>
+      <div class="quest-avg-row">
+        <div class="quest-avg-header">
+          <span>${isAr ? 'معدل المسابقات (الهدف 70%):' : 'Combined Quiz Avg (Goal 70%):'}</span>
+          <span class="quest-avg-pill ${quest.avgMet ? 'met' : 'below'}">${quest.totalQuizzes > 0 ? `${quest.combinedAvg}%` : '0%'} / ${GIFT_MIN_AVG_PERCENT}%</span>
+        </div>
+        <div class="quest-bar-track" title="${quest.combinedAvg}% / 70%">
+          <div class="quest-bar-fill ${barFillClass}" style="width: ${quest.avgBarPercent}%;"></div>
+          <span class="quest-target-marker" title="70% Goal"></span>
         </div>
       </div>
     `;
@@ -1180,7 +1225,7 @@
     const quizPercent = Number(currentRec.quizPercent) || 0;
     const attendance = currentRec.attendance || 'Active';
 
-    // Gift Qualification Rule: 10 good quizzes (> 70% each)
+    // Gift Qualification Rule: 10+ completed quizzes AND combined average >= 70%
     const qualifiesForGift = giftQuest.hasGift;
 
     let delta = 0;
@@ -1327,22 +1372,23 @@
       `;
     }
 
-    // 2. Render Gamified Gift Quest Arena (10 Good Quizzes > 70%)
+    // 2. Render Gamified Gift Quest Arena (10 Quizzes & Combined Avg >= 70%)
     if (elements.giftThresholdDisplay) {
-      elements.giftThresholdDisplay.textContent = `${GIFT_REQUIRED_GOOD_QUIZZES}`;
+      elements.giftThresholdDisplay.textContent = `${GIFT_REQUIRED_QUIZZES}`;
     }
     if (elements.giftCountBadge) {
       elements.giftCountBadge.textContent = isAr
-        ? `${giftWinnersCount} فائز • ${questInProgressCount} في السباق`
+        ? `${giftWinnersCount} سيحصل على جائزة • ${questInProgressCount} قيد التقدم`
         : `${giftWinnersCount} Unlocked • ${questInProgressCount} In Quest`;
     }
 
-    // Sort: highest goodQuizzes first, then highest current quizPercent
+    // Sort: unlocked first, then highest quiz count, then highest combined average
     questItems.sort((a, b) => {
-      if (b.quest.goodQuizzes !== a.quest.goodQuizzes) {
-        return b.quest.goodQuizzes - a.quest.goodQuizzes;
+      if (a.quest.hasGift !== b.quest.hasGift) return a.quest.hasGift ? -1 : 1;
+      if (b.quest.totalQuizzes !== a.quest.totalQuizzes) {
+        return b.quest.totalQuizzes - a.quest.totalQuizzes;
       }
-      return (Number(b.trajectory.quizPercent) || 0) - (Number(a.trajectory.quizPercent) || 0);
+      return b.quest.combinedAvg - a.quest.combinedAvg;
     });
 
     if (questItems.length > 0) {
@@ -1351,37 +1397,20 @@
         const hasImg = Boolean(student.avatarUrl && student.avatarUrl.trim());
 
         let tierText = '';
-        let hintText = '';
-        if (quest.tier === 'unlocked') {
-          tierText = isAr ? '🎁 فاز بالهدية!' : '🎁 Gift Unlocked!';
-          hintText = isAr
-            ? `🎉 أكمل ${quest.goodQuizzes} اختبار متميز — مبروك!`
-            : `🎉 ${quest.goodQuizzes} good quizzes — Amazing work!`;
-        } else if (quest.tier === 'almost') {
-          tierText = isAr ? `🔥 باقي ${quest.remaining} فقط!` : `🔥 Only ${quest.remaining} left!`;
-          hintText = isAr
-            ? `قريب جداً من فتح هديتك!`
-            : `So close to unlocking your gift!`;
-        } else if (quest.tier === 'leveling') {
-          tierText = isAr ? `⚡ في التقدم` : `⚡ Leveling Up!`;
-          hintText = isAr
-            ? `باقي ${quest.remaining} اختبارات متميزة للهدية`
-            : `${quest.remaining} more good quizzes to go!`;
-        } else if (quest.tier === 'started') {
-          tierText = isAr ? `🚀 انطلق!` : `🚀 Quest Started!`;
-          hintText = isAr
-            ? `بداية رائعة! باقي ${quest.remaining} للهدية`
-            : `Great start! ${quest.remaining} more to unlock`;
+        if (quest.hasGift) {
+          tierText = isAr ? '🎁 سيحصل على جائزة!' : '🎁 Will Get Gift!';
+        } else if (quest.hasCompleted10 && !quest.avgMet) {
+          tierText = isAr ? `🎯 متبقي +${quest.avgRemaining}%` : `🎯 Needs +${quest.avgRemaining}%`;
+        } else if (quest.totalQuizzes >= 7) {
+          tierText = isAr ? `🔥 متبقي ${quest.quizzesRemaining} فقط!` : `🔥 ${quest.quizzesRemaining} left!`;
+        } else if (quest.totalQuizzes >= 1) {
+          tierText = isAr ? `🚀 متبقي ${quest.quizzesRemaining}` : `🚀 ${quest.quizzesRemaining} left`;
         } else {
-          tierText = isAr ? `🎯 ابدأ السباق` : `🎯 Ready to Start`;
-          hintText = isAr
-            ? `احصل على >70% في الاختبارات لجمع النجوم`
-            : `Score >70% on quizzes to collect stars`;
+          tierText = isAr ? `🎯 0 / 10` : `🎯 0 / 10`;
         }
 
-        const countLabel = quest.giftsEarned > 1
-          ? `${quest.goodQuizzes} ⭐ (🎁 ×${quest.giftsEarned})`
-          : `${quest.stepProgress} / ${GIFT_REQUIRED_GOOD_QUIZZES} ⭐`;
+        const hintText = buildQuestRemainingText(quest);
+        const countLabel = `${quest.totalQuizzes} / ${GIFT_REQUIRED_QUIZZES} ${isAr ? 'مسابقة' : 'quizzes'}`;
 
         return `
           <div class="gift-quest-item ${quest.hasGift ? 'is-unlocked' : ''}" data-student-id="${student.id}" role="button" tabindex="0" title="${escapeHtml(student.name)}">
@@ -1396,11 +1425,7 @@
               <span class="gift-quest-tier ${quest.tier}">${tierText}</span>
             </div>
 
-            ${renderQuestStepsHtml(quest.goodQuizzes)}
-
-            <div class="quest-bar-track">
-              <div class="quest-bar-fill ${quest.hasGift ? 'unlocked' : ''}" style="width: ${quest.progressPercent}%;"></div>
-            </div>
+            ${renderQuestStepsHtml(quest)}
 
             <div class="quest-progress-meta">
               <span>${hintText}</span>
@@ -1558,7 +1583,7 @@
             <div class="metric-col single-metric">
               <span class="metric-label">${t('percentageLabel')}</span>
               <span class="metric-val score-primary" style="font-size: 1.35rem;">${traj.hasRecord ? `${traj.quizPercent}%` : '—'}</span>
-              <span class="metric-sub">${traj.hasRecord ? (traj.qualifiesForGift ? t('giftQualified') : `${quest.stepProgress}/${GIFT_REQUIRED_GOOD_QUIZZES} ⭐`) : t('pendingEvaluation')}</span>
+              <span class="metric-sub">${traj.hasRecord ? (traj.qualifiesForGift ? t('giftQualified') : `${quest.stepProgress}/${GIFT_REQUIRED_QUIZZES} ⭐`) : t('pendingEvaluation')}</span>
             </div>
           </div>
         `;
@@ -1569,8 +1594,22 @@
         : (traj.status === 'forward' ? t('movingForward') : (traj.status === 'backward' ? t('goingBack') : t('notWorking')));
 
       const giftBadgeHtml = traj.qualifiesForGift
-        ? `<span class="gift-award-badge" title="${t('giftQualified')}">${AppIcons.gift} ${t('giftQualified')} (${quest.goodQuizzes} ⭐)</span>`
-        : `<span class="status-badge neutral" title="${quest.remaining} more good quizzes (>70%)">${AppIcons.star} ${quest.stepProgress}/${GIFT_REQUIRED_GOOD_QUIZZES} ${t('noGift')}</span>`;
+        ? `<span class="gift-award-badge" title="${t('giftQualified')}">${AppIcons.gift} ${t('giftQualified')} (${quest.totalQuizzes}/${GIFT_REQUIRED_QUIZZES} • ${quest.combinedAvg}%)</span>`
+        : `<span class="status-badge neutral" title="${buildQuestRemainingText(quest)}">${AppIcons.star} ${quest.stepProgress}/${GIFT_REQUIRED_QUIZZES} (${quest.combinedAvg}%)</span>`;
+
+      const cardQuestBarHtml = `
+        <div class="card-gift-game-box ${quest.hasGift ? 'is-unlocked' : ''}">
+          <div class="quest-avg-header">
+            <span>${state.lang === 'ar' ? 'تقدم الجائزة' : 'Gift Progress'}: <strong>${quest.totalQuizzes}/${GIFT_REQUIRED_QUIZZES}</strong></span>
+            <span class="quest-avg-pill ${quest.avgMet ? 'met' : 'below'}">${quest.combinedAvg}% / 70%</span>
+          </div>
+          <div class="quest-bar-track">
+            <div class="quest-bar-fill ${quest.hasGift ? 'unlocked' : (quest.avgMet ? 'avg-met' : '')}" style="width: ${quest.avgBarPercent}%;"></div>
+            <span class="quest-target-marker"></span>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-secondary);">${buildQuestRemainingText(quest)}</div>
+        </div>
+      `;
 
       return `
         <div class="card student-card ${isTop ? 'is-top-student' : ''}" data-student-id="${student.id}">
@@ -1598,6 +1637,8 @@
             <!-- Gift Badge if qualifies -->
             ${giftBadgeHtml}
           </div>
+
+          ${cardQuestBarHtml}
 
           <p class="student-remarks" title="${escapeHtml(remarksText)}">
             "${escapeHtml(remarksText)}"
@@ -1647,15 +1688,15 @@
           <td>${student.gradeLevel || '—'}</td>
           <td>${traj.hasRecord ? `${traj.currentRec.quizScore} / ${traj.currentRec.quizMax}` : '—'}</td>
           <td>
-            <strong style="color: ${traj.hasRecord && isGoodQuizPercent(traj.quizPercent) ? '#10b981' : '#f43f5e'};">
+            <strong style="color: ${traj.hasRecord && isAvgEligiblePercent(traj.quizPercent) ? '#10b981' : '#f43f5e'};">
               ${traj.hasRecord ? `${traj.quizPercent}%` : '—'}
             </strong>
           </td>
           <td>
             ${traj.qualifiesForGift ? `
-              <span class="gift-award-badge" style="font-size: 0.7rem; padding: 2px 8px;">${AppIcons.gift} ${t('yesGift')} (${quest.goodQuizzes} ⭐)</span>
+              <span class="gift-award-badge" style="font-size: 0.7rem; padding: 2px 8px;">${AppIcons.gift} ${t('yesGift')} (${quest.combinedAvg}%)</span>
             ` : `
-              <span class="status-badge neutral" style="font-size: 0.7rem; padding: 2px 8px;">${AppIcons.star} ${quest.stepProgress}/${GIFT_REQUIRED_GOOD_QUIZZES}</span>
+              <span class="status-badge neutral" style="font-size: 0.7rem; padding: 2px 8px;">${AppIcons.star} ${quest.stepProgress}/${GIFT_REQUIRED_QUIZZES} (${quest.combinedAvg}%)</span>
             `}
           </td>
           <td>
@@ -1988,7 +2029,7 @@
     let pillClass = '';
     if (scoreVal !== '' && maxVal > 0) {
       const pctNum = Number(((Number(scoreVal) / Number(maxVal)) * 100).toFixed(1));
-      const good = isGoodQuizPercent(pctNum);
+      const good = isAvgEligiblePercent(pctNum);
       rowPct = `${pctNum}%${good ? ' ⭐' : ''}`;
       pillClass = good ? 'is-good' : 'is-low';
     }
@@ -2078,7 +2119,7 @@
 
       if (scoreRaw !== '' && !isNaN(scoreNum) && !isNaN(maxNum) && maxNum > 0) {
         const rowPct = Number(((scoreNum / maxNum) * 100).toFixed(1));
-        const isGood = isGoodQuizPercent(rowPct);
+        const isGood = isAvgEligiblePercent(rowPct);
         if (pctBadge) {
           pctBadge.textContent = `${rowPct}%${isGood ? ' ⭐' : ''}`;
           pctBadge.classList.toggle('is-good', isGood);
@@ -2110,26 +2151,27 @@
     if (elements.quizCalcPreview) {
       elements.quizCalcPreview.textContent = `${combinedPercent}%`;
     }
-    if (elements.quizGoodCountDisplay) {
-      elements.quizGoodCountDisplay.textContent = `${goodThisMonth} / ${enteredCount} ⭐`;
-    }
-    if (elements.btnSyncPctVal) {
-      elements.btnSyncPctVal.textContent = `${combinedPercent}%`;
-    }
 
     const studentId = elements.gradeStudentId ? elements.gradeStudentId.value : '';
     const targetMonthKey = elements.gradeMonthSelect ? elements.gradeMonthSelect.value : state.selectedMonth;
     const activeStudent = state.students.find(s => s.id === studentId);
     const liveQuest = activeStudent
       ? evaluateGiftQuest(activeStudent, null, { monthKey: targetMonthKey, quizzes: draftQuizzes })
-      : { goodQuizzes: goodThisMonth, hasGift: goodThisMonth >= GIFT_REQUIRED_GOOD_QUIZZES, stepProgress: Math.min(10, goodThisMonth) };
+      : { totalQuizzes: enteredCount, combinedAvg: combinedPercent, hasGift: enteredCount >= GIFT_REQUIRED_QUIZZES && isAvgEligiblePercent(combinedPercent), stepProgress: Math.min(10, enteredCount), quizzesRemaining: Math.max(0, 10 - enteredCount), avgRemaining: Math.max(0, Number((70 - combinedPercent).toFixed(1))), hasCompleted10: enteredCount >= 10, avgMet: isAvgEligiblePercent(combinedPercent) };
+
+    if (elements.quizGoodCountDisplay) {
+      elements.quizGoodCountDisplay.textContent = `${liveQuest.totalQuizzes} / ${GIFT_REQUIRED_QUIZZES}`;
+    }
+    if (elements.btnSyncPctVal) {
+      elements.btnSyncPctVal.textContent = `${combinedPercent}%`;
+    }
 
     if (elements.quizGiftStatusText) {
       if (enteredCount > 0) {
         if (liveQuest.hasGift) {
-          elements.quizGiftStatusText.innerHTML = `<span style="color: #10b981; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">${AppIcons.gift} ${t('qualifiedGiftMsg')} (${liveQuest.goodQuizzes} ⭐)</span>`;
+          elements.quizGiftStatusText.innerHTML = `<span style="color: #10b981; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">${AppIcons.gift} ${t('qualifiedGiftMsg')} (${liveQuest.combinedAvg}%)</span>`;
         } else {
-          elements.quizGiftStatusText.innerHTML = `<span style="color: #d97706; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">${AppIcons.star} ${t('notQualifiedGiftMsg', { n: liveQuest.stepProgress })}</span>`;
+          elements.quizGiftStatusText.innerHTML = `<span style="color: #d97706; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">${AppIcons.star} ${buildQuestRemainingText(liveQuest)}</span>`;
         }
       } else {
         elements.quizGiftStatusText.textContent = t('enterScoresPrompt');
@@ -2147,7 +2189,7 @@
     if (overallScoreValue) {
       if (totalMax > 0) {
         overallScoreValue.textContent = `${combinedPercent}%`;
-        overallScoreValue.style.color = isGoodQuizPercent(combinedPercent) ? 'var(--success, #10b981)' : combinedPercent >= 50 ? 'var(--warning, #f59e0b)' : 'var(--danger, #f43f5e)';
+        overallScoreValue.style.color = isAvgEligiblePercent(combinedPercent) ? 'var(--success, #10b981)' : combinedPercent >= 50 ? 'var(--warning, #f59e0b)' : 'var(--danger, #f43f5e)';
       } else {
         overallScoreValue.textContent = '—';
         overallScoreValue.style.color = '';
@@ -2307,24 +2349,19 @@
     const overallQuest = evaluateGiftQuest(student, state.selectedMonth);
     if (elements.detailGiftQuestBoard) {
       const questTitle = isAr
-        ? 'سباق الجوائز (10 اختبارات متميزة > 70%)'
-        : 'Gift Quest Progress (10 Good Quizzes > 70%)';
-      const questStatusMsg = overallQuest.hasGift
-        ? (isAr ? `🎁 مبروك! تم فتح الهدية (${overallQuest.goodQuizzes} اختبار متميز)` : `🎁 Gift Unlocked! (${overallQuest.goodQuizzes} good quizzes)`)
-        : (isAr ? `باقي ${overallQuest.remaining} اختبارات متميزة لفتح الهدية!` : `${overallQuest.remaining} more good quizzes to unlock your gift!`);
+        ? 'سباق الجائزة (10 مسابقات بمعدل نهائي ≥ 70%)'
+        : 'Gift Quest Progress (10 Quizzes & Avg ≥ 70%)';
+      const questStatusMsg = buildQuestRemainingText(overallQuest);
 
       elements.detailGiftQuestBoard.innerHTML = `
         <div class="detail-quest-header">
           <div class="detail-quest-title">${AppIcons.gift} <span>${questTitle}</span></div>
-          <span class="gift-quest-tier ${overallQuest.tier}">${overallQuest.stepProgress} / ${GIFT_REQUIRED_GOOD_QUIZZES} ⭐</span>
+          <span class="gift-quest-tier ${overallQuest.tier}">${overallQuest.totalQuizzes} / ${GIFT_REQUIRED_QUIZZES} • ${overallQuest.combinedAvg}%</span>
         </div>
-        ${renderQuestStepsHtml(overallQuest.goodQuizzes)}
-        <div class="quest-bar-track" style="margin-top: 10px;">
-          <div class="quest-bar-fill ${overallQuest.hasGift ? 'unlocked' : ''}" style="width: ${overallQuest.progressPercent}%;"></div>
-        </div>
-        <div class="quest-progress-meta" style="margin-top: 6px;">
+        ${renderQuestStepsHtml(overallQuest)}
+        <div class="quest-progress-meta" style="margin-top: 8px;">
           <span>${questStatusMsg}</span>
-          <span class="quest-progress-count">${overallQuest.progressPercent}%</span>
+          <span class="quest-progress-count">${overallQuest.quizProgressPercent}%</span>
         </div>
       `;
     }
@@ -2342,7 +2379,7 @@
         const quizzesArr = (Array.isArray(rec.quizzes) && rec.quizzes.length > 0)
           ? rec.quizzes
           : (rec.quizMax > 0 ? [{ title: 'Quiz', score: rec.quizScore, maxScore: rec.quizMax }] : []);
-        const monthGoodCount = quizzesArr.filter(q => q.maxScore > 0 && isGoodQuizPercent((q.score / q.maxScore) * 100)).length;
+        const monthAvgEligible = isAvgEligiblePercent(rec.quizPercent);
 
         let statsRowsHtml = '';
         if (state.isAdmin) {
@@ -2352,7 +2389,7 @@
               <div class="quiz-breakdown-tags">
                 ${rec.quizzes.map(q => {
                   const pct = q.maxScore > 0 ? (q.score / q.maxScore) * 100 : 0;
-                  const starMark = isGoodQuizPercent(pct) ? ' ⭐' : '';
+                  const starMark = isAvgEligiblePercent(pct) ? ' ⭐' : '';
                   return `<span class="quiz-breakdown-tag" title="${escapeHtml(q.title)}: ${q.score}/${q.maxScore}">${escapeHtml(q.title)}: ${q.score}/${q.maxScore}${starMark}</span>`;
                 }).join('')}
               </div>
@@ -2383,7 +2420,7 @@
           <div class="history-card ${isCurrent ? 'current' : ''}">
             <div class="history-month-title">
               <span>${monthTitle}</span>
-              <span>${AppIcons.star} ${monthGoodCount}/${quizzesArr.length}</span>
+              <span>${quizzesArr.length} ${t('testsCount')} ${monthAvgEligible ? '⭐' : ''}</span>
             </div>
             ${statsRowsHtml}
             <div class="history-stat-row">
@@ -2416,13 +2453,13 @@
       ? `
         <p><strong>ملخص المسار لشهر ${activeMonthName}:</strong> ${trajSummaryLabel}</p>
         <p style="margin-top: 4px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
-          الاختبارات المتميزة (&gt;70%): <strong>${overallQuest.goodQuizzes} / ${GIFT_REQUIRED_GOOD_QUIZZES}</strong> <span style="color: #fbbf24;">${AppIcons.gift}</span>
+          المسابقات المنجزة: <strong>${overallQuest.totalQuizzes} / ${GIFT_REQUIRED_QUIZZES}</strong> • المعدل النهائي: <strong>${overallQuest.combinedAvg}%</strong> <span style="color: #fbbf24;">${AppIcons.gift}</span>
         </p>
       `
       : `
         <p><strong>Trajectory Summary for ${activeMonthName}:</strong> ${trajSummaryLabel}</p>
         <p style="margin-top: 4px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
-          Good Quizzes (&gt;70%) Earned: <strong>${overallQuest.goodQuizzes} / ${GIFT_REQUIRED_GOOD_QUIZZES}</strong> <span style="color: #fbbf24;">${AppIcons.gift}</span>
+          Quizzes Completed: <strong>${overallQuest.totalQuizzes} / ${GIFT_REQUIRED_QUIZZES}</strong> • Combined Avg: <strong>${overallQuest.combinedAvg}%</strong> <span style="color: #fbbf24;">${AppIcons.gift}</span>
         </p>
       `;
 
