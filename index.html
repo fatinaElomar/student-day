@@ -35,21 +35,11 @@
       </div>
 
       <div class="header-controls">
-        <!-- Selected Month Switcher (Admin Only) -->
-        <div class="control-group admin-only" id="month-control-group">
-          <label for="month-select" class="control-label" data-i18n="academicMonth">Academic Month:</label>
-          <div class="select-wrapper">
-            <select id="month-select" class="custom-select" aria-label="Select Academic Month">
-              <!-- Dynamically populated -->
-            </select>
-          </div>
-        </div>
-
-        <!-- MongoDB Atlas Live Connection Status (Admin Only) -->
-        <div id="db-status-badge" class="db-pill connecting admin-only" title="MongoDB Atlas Cloud Database Status">
-          <span class="db-dot"></span>
-          <span id="db-status-text" data-i18n="cloudDbConnecting">Cloud DB: Connecting...</span>
-        </div>
+        <!-- Admin Sidebar Toggle - Admin Only -->
+        <button id="btn-sidebar-toggle" class="btn btn-outline sidebar-toggle-btn admin-only" aria-label="Toggle Admin Panel" aria-expanded="false" title="Toggle Admin Panel">
+          <svg class="svg-icon md" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          <span data-i18n="adminMenuBtn">Admin Menu</span>
+        </button>
 
         <!-- Role Badge & Admin Mode Toggle (Hidden from visitors; visible only when logged in as Admin) -->
         <div class="role-switcher" id="role-switcher-container" style="display: none;">
@@ -75,6 +65,74 @@
       </div>
     </div>
   </header>
+
+  <!-- Admin Sidebar Panel (Slide-in) -->
+  <aside id="admin-sidebar" class="admin-sidebar admin-only" aria-hidden="true">
+    <div class="sidebar-header">
+      <h3 class="sidebar-title">
+        <svg class="svg-icon md" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span data-i18n="adminPanelTitle">Admin Panel</span>
+      </h3>
+      <button id="btn-sidebar-close" class="sidebar-close-btn" aria-label="Close sidebar">&times;</button>
+    </div>
+
+    <div class="sidebar-body">
+      <!-- Month Selector -->
+      <div class="sidebar-section">
+        <label for="month-select" class="sidebar-label" data-i18n="academicMonth">Academic Month:</label>
+        <div class="select-wrapper">
+          <select id="month-select" class="custom-select" aria-label="Select Academic Month">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+      </div>
+
+      <!-- DB Status (Admin Only) -->
+      <div class="sidebar-section admin-only">
+        <div id="db-status-badge" class="db-pill connecting admin-only" title="MongoDB Atlas Cloud Database Status">
+          <span class="db-dot"></span>
+          <span id="db-status-text" data-i18n="cloudDbConnecting">Cloud DB: Connecting...</span>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="sidebar-section">
+        <label class="sidebar-label" data-i18n="quickActions">Quick Actions</label>
+        <div class="sidebar-actions">
+          <button id="btn-add-student" class="btn btn-primary btn-block" title="Add New Student (Admin only)">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8m-4-4v8"/></svg> <span data-i18n="addStudent">Add Student</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- View Mode -->
+      <div class="sidebar-section">
+        <label class="sidebar-label" data-i18n="viewModeLabel">View Mode</label>
+        <div class="view-toggle-group">
+          <button id="btn-view-grid" class="view-btn active" title="Grid Cards View" aria-label="Grid View">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> <span data-i18n="viewCards">Cards</span>
+          </button>
+          <button id="btn-view-table" class="view-btn" title="Detailed Table View" aria-label="Table View">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 3v18M3 9h18M3 15h18"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg> <span data-i18n="viewTable">Table</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Data Management -->
+      <div class="sidebar-section">
+        <label class="sidebar-label" data-i18n="dataManagement">Data Management</label>
+        <div class="sidebar-actions">
+          <button id="btn-export-data" class="btn btn-sm btn-outline btn-block">
+            <svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3"/></svg> <span data-i18n="exportData">Export Data (JSON)</span>
+          </button>
+          <button id="btn-clear-all" class="btn btn-sm btn-outline btn-block btn-danger-outline" title="Clear all students">
+            <svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg> <span data-i18n="clearAllData">Clear All Data</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-overlay" class="sidebar-overlay admin-only"></div>
 
   <main class="container main-content">
     
@@ -195,25 +253,6 @@
           <button class="filter-pill" data-filter="gift"><svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13m7-9v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.5 4.5 0 0 1 12 7.5a4.5 4.5 0 0 1 4.5-4.5 2.5 2.5 0 0 1 0 5"/></svg> <span data-i18n="filterGift">Gift Qualified</span> (<span id="count-gift">0</span>)</button>
         </div>
       </div>
-
-      <div class="toolbar-right">
-        <!-- View Mode Switcher (Table View is restricted to Admin) -->
-        <div class="view-toggle-group admin-only">
-          <button id="btn-view-grid" class="view-btn active" title="Grid Cards View" aria-label="Grid View">
-            <svg class="svg-icon sm" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> <span data-i18n="viewCards">Cards</span>
-          </button>
-          <button id="btn-view-table" class="view-btn admin-only" title="Detailed Table View (Admin Only)" aria-label="Table View">
-            <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 3v18M3 9h18M3 15h18"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg> <span data-i18n="viewTable">Table</span>
-          </button>
-        </div>
-
-        <!-- Admin Only Action: Add Student Button -->
-        <div class="admin-actions-wrap">
-          <button id="btn-add-student" class="btn btn-primary" title="Add New Student (Admin only)">
-            <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8m-4-4v8"/></svg> <span data-i18n="addStudent">Add Student</span>
-          </button>
-        </div>
-      </div>
     </section>
 
     <!-- Main Student Roster Views (Admin Only) -->
@@ -258,47 +297,6 @@
         </div>
       </div>
     </section>
-
-    <!-- Quick Legend / Explanations (Admin Only) -->
-    <footer class="system-legend card admin-only">
-      <div class="legend-header">
-        <h4 data-i18n="rulesTitle">System Rules &amp; Performance Criteria</h4>
-      </div>
-      <div class="legend-grid">
-        <div class="legend-item">
-          <span class="legend-badge gift-badge">
-            <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13m7-9v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.5 4.5 0 0 1 12 7.5a4.5 4.5 0 0 1 4.5-4.5 2.5 2.5 0 0 1 0 5"/></svg> <span data-i18n="giftAwardBadge">Gift Award</span>
-          </span>
-          <p data-i18n="giftRuleDesc">Granted when a student achieves <strong>&ge; 16%</strong> (or higher) on their monthly quiz test.</p>
-        </div>
-        <div class="legend-item">
-          <span class="legend-badge forward-badge">
-            <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg> <span data-i18n="movingForward">Moving Forward</span>
-          </span>
-          <p data-i18n="forwardRuleDesc">Student is progressing! Monthly score increased compared to the previous month.</p>
-        </div>
-        <div class="legend-item">
-          <span class="legend-badge backward-badge">
-            <svg class="svg-icon sm" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg> <span data-i18n="goingBack">Going Back</span>
-          </span>
-          <p data-i18n="backwardRuleDesc">Regression alert! Monthly score dropped from the previous month. Requires teacher guidance.</p>
-        </div>
-        <div class="legend-item">
-          <span class="legend-badge stagnant-badge">
-            <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> <span data-i18n="notWorking">Not Working</span>
-          </span>
-          <p data-i18n="stagnantRuleDesc">Student is inactive, showed 0 progress, or grades consistently below minimum passing standards.</p>
-        </div>
-      </div>
-      <div class="legend-bottom-actions">
-        <button id="btn-export-data" class="btn btn-xs btn-outline">
-          <svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3"/></svg> <span data-i18n="exportData">Export Data (JSON)</span>
-        </button>
-        <button id="btn-clear-all" class="btn btn-xs btn-outline admin-only" title="Clear all students">
-          <svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg> <span data-i18n="clearAllData">Clear All Data</span>
-        </button>
-      </div>
-    </footer>
   </main>
 
   <!-- ==================== MODALS ==================== -->
@@ -312,11 +310,11 @@
         </h3>
         <button class="modal-close-btn" data-close="modal-admin-auth">&times;</button>
       </div>
-      <form id="admin-auth-form" class="modal-body">
+      <form id="admin-auth-form" class="modal-body" autocomplete="off">
         <p class="modal-instruction" data-i18n="authInstruction">For admin access only.</p>
         <div class="form-group">
           <label for="admin-pin-input" data-i18n="enterPasscode">Enter Admin Passcode:</label>
-          <input type="password" id="admin-pin-input" class="form-input" placeholder="Enter passcode" data-i18n-placeholder="pinPlaceholder" required autocomplete="current-password">
+          <input type="password" id="admin-pin-input" class="form-input" value="" placeholder="Enter passcode" data-i18n-placeholder="pinPlaceholder" required autocomplete="new-password">
         </div>
         <div class="modal-actions">
           <button type="button" class="btn btn-outline" data-close="modal-admin-auth" data-i18n="cancelBtn">Cancel</button>

@@ -71,6 +71,11 @@
       cloudDbSavedLocally: 'Saved Locally (Sync Pending)',
       adminMode: 'Admin Mode',
       exitAdmin: 'Exit Admin',
+      adminMenuBtn: 'Admin Menu',
+      adminPanelTitle: 'Admin Panel',
+      quickActions: 'Quick Actions',
+      viewModeLabel: 'View Mode',
+      dataManagement: 'Data Management',
       langToggleText: 'العربية',
       studentOfTheMonth: 'Student of the Month',
       spotlightHint: 'Based on top monthly score & quiz consistency',
@@ -201,7 +206,7 @@
       testsCount: 'tests',
       toastAdminSuccess: 'Logged in as Admin successfully!',
       toastAdminLogout: 'Exited Admin mode successfully.',
-      toastInvalidPasscode: 'Invalid passcode! Try "admin123".',
+      toastInvalidPasscode: 'Invalid passcode! Access denied.',
       toastStudentAdded: 'Student added successfully!',
       toastStudentUpdated: 'Student details updated!',
       toastStudentDeleted: 'Student deleted successfully!',
@@ -225,6 +230,11 @@
       cloudDbSavedLocally: 'حُفظ محلياً (في انتظار المزامنة)',
       adminMode: 'وضع المسؤول',
       exitAdmin: 'خروج من المسؤول',
+      adminMenuBtn: 'قائمة التحكم',
+      adminPanelTitle: 'لوحة التحكم',
+      quickActions: 'إجراءات سريعة',
+      viewModeLabel: 'طريقة العرض',
+      dataManagement: 'إدارة البيانات',
       langToggleText: 'English',
       studentOfTheMonth: 'طالب الشهر المتميز',
       spotlightHint: 'بناءً على أعلى درجة شهرية والمواظبة في الاختبارات',
@@ -355,7 +365,7 @@
       testsCount: 'اختبارات',
       toastAdminSuccess: 'تم تسجيل الدخول كمسؤول بنجاح!',
       toastAdminLogout: 'تم الخروج من وضع المسؤول بنجاح.',
-      toastInvalidPasscode: 'رمز المرور غير صحيح! الرمز الافتراضي هو "admin123".',
+      toastInvalidPasscode: 'رمز المرور غير صحيح!',
       toastStudentAdded: 'تمت إضافة الطالب بنجاح!',
       toastStudentUpdated: 'تم تحديث بيانات الطالب بنجاح!',
       toastStudentDeleted: 'تم حذف الطالب بنجاح!',
@@ -426,7 +436,6 @@
     brandLogoTrigger: document.getElementById('brand-logo-trigger'),
     dbStatusBadge: document.getElementById('db-status-badge'),
     dbStatusText: document.getElementById('db-status-text'),
-    monthControlGroup: document.getElementById('month-control-group'),
     monthSelect: document.getElementById('month-select'),
     roleSwitcherContainer: document.getElementById('role-switcher-container'),
     roleStatusBadge: document.getElementById('role-status-badge'),
@@ -536,7 +545,13 @@
     emptyStateDesc: document.getElementById('empty-state-desc'),
     btnResetFilters: document.getElementById('btn-reset-filters'),
     btnEmptyAddStudent: document.getElementById('btn-empty-add-student'),
-    toastContainer: document.getElementById('toast-container')
+    toastContainer: document.getElementById('toast-container'),
+
+    // Admin Sidebar
+    adminSidebar: document.getElementById('admin-sidebar'),
+    sidebarOverlay: document.getElementById('sidebar-overlay'),
+    btnSidebarToggle: document.getElementById('btn-sidebar-toggle'),
+    btnSidebarClose: document.getElementById('btn-sidebar-close')
   };
 
   let pendingDeleteStudentId = null;
@@ -616,7 +631,7 @@
 
   function updateDbStatus(status, textKey, defaultText) {
     if (!elements.dbStatusBadge || !elements.dbStatusText) return;
-    elements.dbStatusBadge.className = `db-pill ${status}`;
+    elements.dbStatusBadge.className = `db-pill ${status} admin-only`;
     elements.dbStatusText.textContent = textKey ? t(textKey) : (defaultText || status);
   }
 
@@ -626,9 +641,10 @@
       if (res.ok) {
         const json = await res.json();
         if (json.dbConnected) {
+          const wasConnected = elements.dbStatusBadge && elements.dbStatusBadge.classList.contains('connected');
           updateDbStatus('connected', 'cloudDbConnected', 'MongoDB Atlas Connected');
           // If we were offline or haven't loaded students from cloud yet, load them
-          if (elements.dbStatusBadge && !elements.dbStatusBadge.classList.contains('connected')) {
+          if (!wasConnected) {
             loadData();
           }
         } else {
@@ -1386,6 +1402,7 @@
         if (elements.btnViewGrid) elements.btnViewGrid.classList.add('active');
         if (elements.btnViewTable) elements.btnViewTable.classList.remove('active');
       }
+      closeSidebar();
     }
 
     renderHighlights();
@@ -1419,8 +1436,54 @@
     try {
       localStorage.removeItem(ROLE_STORAGE_KEY);
     } catch (_) {}
+    closeSidebar();
     updateRoleUI();
     showToast('toastAdminLogout', 'info');
+  }
+
+  // =========================================================================
+  // ADMIN SIDEBAR TOGGLE
+  // =========================================================================
+  function openSidebar() {
+    if (!state.isAdmin) return;
+    if (elements.adminSidebar) {
+      elements.adminSidebar.classList.add('open');
+      elements.adminSidebar.setAttribute('aria-hidden', 'false');
+    }
+    if (elements.sidebarOverlay) elements.sidebarOverlay.classList.add('active');
+    if (elements.btnSidebarToggle) elements.btnSidebarToggle.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    if (elements.adminSidebar) {
+      elements.adminSidebar.classList.remove('open');
+      elements.adminSidebar.setAttribute('aria-hidden', 'true');
+    }
+    if (elements.sidebarOverlay) elements.sidebarOverlay.classList.remove('active');
+    if (elements.btnSidebarToggle) elements.btnSidebarToggle.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  function toggleSidebar() {
+    if (elements.adminSidebar && elements.adminSidebar.classList.contains('open')) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  }
+
+  function openAdminAuthModal() {
+    if (elements.adminPinInput) {
+      elements.adminPinInput.value = '';
+    }
+    openModal(elements.modalAdminAuth);
+    setTimeout(() => {
+      if (elements.adminPinInput) {
+        elements.adminPinInput.value = '';
+        elements.adminPinInput.focus();
+      }
+    }, 100);
   }
 
   // =========================================================================
@@ -1446,7 +1509,7 @@
   function openCreateStudentModal() {
     if (!state.isAdmin) {
       showToast('toastAdminReqGrade', 'warning');
-      openModal(elements.modalAdminAuth);
+      openAdminAuthModal();
       return;
     }
 
@@ -1472,7 +1535,7 @@
   function openEditStudentModal(studentId) {
     if (!state.isAdmin) {
       showToast('toastAdminReqGrade', 'warning');
-      openModal(elements.modalAdminAuth);
+      openAdminAuthModal();
       return;
     }
 
@@ -1558,7 +1621,7 @@
   function openDeleteConfirmModal(studentId) {
     if (!state.isAdmin) {
       showToast('toastAdminReqGrade', 'warning');
-      openModal(elements.modalAdminAuth);
+      openAdminAuthModal();
       return;
     }
 
@@ -1712,7 +1775,7 @@
   function openGradeEntryModal(studentId) {
     if (!state.isAdmin) {
       showToast('toastAdminReqGrade', 'warning');
-      openModal(elements.modalAdminAuth);
+      openAdminAuthModal();
       return;
     }
 
@@ -1976,7 +2039,7 @@
   function clearAllData() {
     if (!state.isAdmin) {
       showToast('toastAdminReqGrade', 'error');
-      openModal(elements.modalAdminAuth);
+      openAdminAuthModal();
       return;
     }
     const confirmPrompt = t('confirmClearAll');
@@ -1996,8 +2059,7 @@
       try {
         history.replaceState(null, '', window.location.pathname + window.location.search);
       } catch (_) {}
-      openModal(elements.modalAdminAuth);
-      setTimeout(() => elements.adminPinInput && elements.adminPinInput.focus(), 150);
+      openAdminAuthModal();
     }
   }
 
@@ -2040,16 +2102,14 @@
     if (elements.brandLogoTrigger) {
       elements.brandLogoTrigger.addEventListener('click', () => {
         if (!state.isAdmin) {
-          openModal(elements.modalAdminAuth);
-          setTimeout(() => elements.adminPinInput && elements.adminPinInput.focus(), 100);
+          openAdminAuthModal();
         }
       });
       elements.brandLogoTrigger.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           if (!state.isAdmin) {
             e.preventDefault();
-            openModal(elements.modalAdminAuth);
-            setTimeout(() => elements.adminPinInput && elements.adminPinInput.focus(), 100);
+            openAdminAuthModal();
           }
         }
       });
@@ -2061,11 +2121,23 @@
           (e.altKey && e.key && e.key.toLowerCase() === 'a')) {
         e.preventDefault();
         if (!state.isAdmin) {
-          openModal(elements.modalAdminAuth);
-          setTimeout(() => elements.adminPinInput && elements.adminPinInput.focus(), 100);
+          openAdminAuthModal();
         }
+      } else if (e.key === 'Escape' && elements.adminSidebar && elements.adminSidebar.classList.contains('open')) {
+        closeSidebar();
       }
     });
+
+    // Admin Sidebar toggle controls
+    if (elements.btnSidebarToggle) {
+      elements.btnSidebarToggle.addEventListener('click', toggleSidebar);
+    }
+    if (elements.btnSidebarClose) {
+      elements.btnSidebarClose.addEventListener('click', closeSidebar);
+    }
+    if (elements.sidebarOverlay) {
+      elements.sidebarOverlay.addEventListener('click', closeSidebar);
+    }
 
     // Listen to URL hash change (#admin)
     window.addEventListener('hashchange', checkAdminTriggerFromUrl);
@@ -2076,8 +2148,7 @@
         if (state.isAdmin) {
           handleAdminLogout();
         } else {
-          openModal(elements.modalAdminAuth);
-          setTimeout(() => elements.adminPinInput && elements.adminPinInput.focus(), 100);
+          openAdminAuthModal();
         }
       });
     }
@@ -2101,7 +2172,10 @@
     });
 
     // Student CRUD
-    elements.btnAddStudent.addEventListener('click', openCreateStudentModal);
+    elements.btnAddStudent.addEventListener('click', () => {
+      closeSidebar();
+      openCreateStudentModal();
+    });
     elements.studentCrudForm.addEventListener('submit', handleStudentFormSubmit);
 
     // Dynamic Multi-Quiz calculation & row management
@@ -2281,24 +2355,36 @@
       state.viewMode = 'grid';
       elements.btnViewGrid.classList.add('active');
       elements.btnViewTable.classList.remove('active');
+      closeSidebar();
       renderStudents();
     });
 
     elements.btnViewTable.addEventListener('click', () => {
       if (!state.isAdmin) {
         showToast('toastTableAdminOnly', 'warning');
-        openModal(elements.modalAdminAuth);
+        openAdminAuthModal();
         return;
       }
       state.viewMode = 'table';
       elements.btnViewTable.classList.add('active');
       elements.btnViewGrid.classList.remove('active');
+      closeSidebar();
       renderStudents();
     });
 
     // Export & Clear All
-    if (elements.btnExportData) elements.btnExportData.addEventListener('click', exportData);
-    if (elements.btnClearAll) elements.btnClearAll.addEventListener('click', clearAllData);
+    if (elements.btnExportData) {
+      elements.btnExportData.addEventListener('click', () => {
+        closeSidebar();
+        exportData();
+      });
+    }
+    if (elements.btnClearAll) {
+      elements.btnClearAll.addEventListener('click', () => {
+        closeSidebar();
+        clearAllData();
+      });
+    }
     if (elements.btnEmptyAddStudent) elements.btnEmptyAddStudent.addEventListener('click', openCreateStudentModal);
 
     // Delegated actions for student items (View profile, Grade, Edit, Delete)
