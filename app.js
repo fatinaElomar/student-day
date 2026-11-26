@@ -1718,11 +1718,47 @@
     return Boolean(quest && quest.points >= 1);
   }
 
+  /**
+   * Select Student of the Month by net points (quiz count) first,
+   * then monthly/effective grade average, then quiz percentage.
+   */
+  function selectTopStudent(students, monthKey) {
+    let topCandidate = null;
+    let topPoints = -1;
+    let topScore = -1;
+    let topQuizPct = -1;
+
+    (students || []).forEach(student => {
+      const trajectory = evaluateStudentTrajectory(student, monthKey);
+      const quest = trajectory.giftQuest || evaluateGiftQuest(student, monthKey);
+      if (!isEligibleForTopStudent(student, trajectory, quest)) return;
+
+      const effectiveScore = (trajectory.currentScore !== undefined && trajectory.currentScore !== null)
+        ? Number(trajectory.currentScore)
+        : Number(trajectory.quizPercent || 0);
+      const currPoints = Number(quest.points || 0);
+      const currQuizPct = Number(trajectory.quizPercent || 0);
+
+      const isBetter =
+        currPoints > topPoints ||
+        (currPoints === topPoints && effectiveScore > topScore) ||
+        (currPoints === topPoints && effectiveScore === topScore && currQuizPct > topQuizPct);
+
+      if (isBetter) {
+        topPoints = currPoints;
+        topScore = effectiveScore;
+        topQuizPct = currQuizPct;
+        topCandidate = { student, trajectory, quest };
+      }
+    });
+
+    return topCandidate;
+  }
+
   function renderHighlights() {
     const monthKey = state.selectedMonth;
     const isAr = (state.lang === 'ar');
-    let topStudent = null;
-    let topScore = -1;
+    const topStudent = selectTopStudent(state.students, monthKey);
     let giftWinnersCount = 0;
     let questInProgressCount = 0;
     let questItems = [];
@@ -1747,25 +1783,6 @@
       recordedStudentCount++;
       totalScoreSum += trajectory.currentScore;
 
-      // Student of the Month strictly depends on highest grades / combined percentage AND >= 1 point
-      if (isEligibleForTopStudent(student, trajectory, quest)) {
-        const effectiveScore = (trajectory.currentScore !== undefined && trajectory.currentScore !== null)
-          ? Number(trajectory.currentScore)
-          : Number(trajectory.quizPercent || 0);
-
-        if (effectiveScore > topScore) {
-          topScore = effectiveScore;
-          topStudent = { student, trajectory };
-        } else if (effectiveScore === topScore && topStudent) {
-          // Tie-breaker: higher quiz percentage or more points
-          const currQuizPct = Number(trajectory.quizPercent || 0);
-          const bestQuizPct = Number(topStudent.trajectory.quizPercent || 0);
-          if (currQuizPct > bestQuizPct) {
-            topStudent = { student, trajectory };
-          }
-        }
-      }
-
       // Momentum counts
       if (trajectory.status === 'forward') forwardCount++;
       else if (trajectory.status === 'backward') backwardCount++;
@@ -1776,14 +1793,17 @@
     if (topStudent) {
       const s = topStudent.student;
       const traj = topStudent.trajectory;
+      const winnerQuest = topStudent.quest;
       const initial = s.name.charAt(0).toUpperCase();
       const hasImg = Boolean(s.avatarUrl && s.avatarUrl.trim());
 
       const winnerStatsHtml = state.isAdmin
         ? `<span class="winner-stat-pill">${t('monthlyGrade')}: <span class="val">${traj.currentScore}%</span></span>
-           <span class="winner-stat-pill">${t('quizScore')}: <span class="val">${traj.quizPercent}%</span></span>`
+           <span class="winner-stat-pill">${t('quizScore')}: <span class="val">${traj.quizPercent}%</span></span>
+           <span class="winner-stat-pill">${t('totalPointsLabel')}: <span class="val">${winnerQuest.points}</span></span>`
         : `<span class="winner-stat-pill"><svg class="svg-icon xs" viewBox="0 0 24 24"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg> ${t('topMonthlyPerformer')}</span>
-           <span class="winner-stat-pill">${t('percentageLabel')}: <span class="val">${traj.quizPercent}%</span></span>`;
+           <span class="winner-stat-pill">${t('percentageLabel')}: <span class="val">${traj.quizPercent}%</span></span>
+           <span class="winner-stat-pill">${t('totalPointsLabel')}: <span class="val">${winnerQuest.points}</span></span>`;
 
       elements.spotlightContent.innerHTML = `
         <div class="spotlight-winner">
@@ -1878,24 +1898,9 @@
     const monthKey = state.selectedMonth;
     const query = state.searchQuery.trim().toLowerCase();
 
-    // Determine Top Student ID for spotlight styling (must have >= 1 point)
-    let topStudentId = null;
-    let highestScore = -1;
-    let highestQuizPct = -1;
-    state.students.forEach(s => {
-      const traj = evaluateStudentTrajectory(s, monthKey);
-      const quest = traj.giftQuest || evaluateGiftQuest(s, monthKey);
-      if (!isEligibleForTopStudent(s, traj, quest)) return;
-      const effectiveScore = (traj.currentScore !== undefined && traj.currentScore !== null)
-        ? Number(traj.currentScore)
-        : Number(traj.quizPercent || 0);
-      const qPct = Number(traj.quizPercent || 0);
-      if (effectiveScore > highestScore || (effectiveScore === highestScore && qPct > highestQuizPct)) {
-        highestScore = effectiveScore;
-        highestQuizPct = qPct;
-        topStudentId = s.id;
-      }
-    });
+    // Determine Top Student ID for spotlight styling (points first, then grade, then quiz %)
+    const topCandidate = selectTopStudent(state.students, monthKey);
+    const topStudentId = topCandidate ? topCandidate.student.id : null;
 
     // Filter students
     const filtered = state.students.filter(student => {
@@ -1962,7 +1967,7 @@
   function renderGridView(students, topStudentId, monthKey) {
     elements.studentsGridView.innerHTML = students.map(student => {
       const traj = evaluateStudentTrajectory(student, monthKey);
-      const isTop = (student.id === topStudentId && traj.hasRecord && traj.currentScore > 0);
+      const isTop = (student.id === topStudentId && traj.hasRecord);
 
       const quizCount = (traj.hasRecord && traj.currentRec.quizzes && traj.currentRec.quizzes.length > 1)
         ? ` (${traj.currentRec.quizzes.length} ${t('testsCount')})`
@@ -2104,7 +2109,7 @@
     elements.studentsTableBody.innerHTML = students.map(student => {
       const traj = evaluateStudentTrajectory(student, monthKey);
       const quest = traj.giftQuest || evaluateGiftQuest(student, monthKey);
-      const isTop = (student.id === topStudentId && traj.hasRecord && traj.currentScore > 0);
+      const isTop = (student.id === topStudentId && traj.hasRecord);
 
       return `
         <tr data-student-id="${student.id}">
