@@ -714,10 +714,383 @@ body.light-theme .app-header {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 180px;
+  max-height: 280px;
   overflow-y: auto;
   padding-right: 6px;
   flex: 1;
+}
+
+.gift-min-pct-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Gamified Gift Quest Items */
+.gift-quest-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid var(--border-subtle);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.gift-quest-item:hover {
+  border-color: rgba(245, 158, 11, 0.55);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);
+  transform: translateY(-1px);
+}
+
+.gift-quest-item.is-unlocked {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(245, 158, 11, 0.1));
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.gift-quest-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.gift-quest-tier {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+.gift-quest-tier.unlocked {
+  background: linear-gradient(135deg, #f59e0b, #10b981);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.gift-quest-tier.almost {
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.gift-quest-tier.leveling {
+  background: rgba(99, 102, 241, 0.14);
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.gift-quest-tier.started {
+  background: rgba(6, 182, 212, 0.14);
+  color: #0e7490;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.gift-quest-tier.ready {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+/* 10-Step Star Game Trail */
+.quest-steps-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quest-steps-track {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  flex: 1;
+}
+
+.quest-step-dot {
+  height: 20px;
+  border-radius: 5px;
+  background: #e2e8f0;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.quest-step-dot.earned {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.32);
+}
+
+.quest-step-dot.next {
+  background: rgba(99, 102, 241, 0.14);
+  border: 1.5px dashed #6366f1;
+  color: #4f46e5;
+  animation: quest-pulse 1.8s infinite ease-in-out;
+}
+
+@keyframes quest-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.quest-chest-node {
+  width: 26px;
+  height: 22px;
+  border-radius: 6px;
+  background: #e2e8f0;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.quest-chest-node.unlocked {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+  animation: gift-bounce 2s infinite ease-in-out;
+}
+
+.quest-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.quest-progress-count {
+  font-weight: 700;
+  color: var(--text-primary);
+  direction: ltr;
+  display: inline-block;
+}
+
+.quest-bar-track {
+  height: 6px;
+  width: 100%;
+  background: #e2e8f0;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.quest-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, #6366f1, #f59e0b);
+  transition: width 0.5s ease;
+}
+
+.quest-bar-fill.unlocked {
+  background: linear-gradient(90deg, #f59e0b, #10b981);
+}
+
+/* Active Month Banner & Admin Month Filter Bar */
+.active-month-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.active-month-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.active-month-pill .svg-icon {
+  color: var(--primary);
+}
+
+.active-month-pill strong {
+  color: var(--text-primary);
+}
+
+.prev-month-hint {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  padding-inline-start: 6px;
+  border-inline-start: 1px solid var(--border-subtle);
+}
+
+.toolbar-month-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.toolbar-month-label-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.toolbar-month-label-wrap .svg-icon {
+  color: var(--primary);
+}
+
+.month-quick-pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.month-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background: #f8fafc;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.month-quick-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.month-quick-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.month-btn-tag {
+  font-size: 0.72rem;
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+.custom-select-sm {
+  padding: 6px 32px 6px 12px;
+  font-size: 0.82rem;
+}
+
+/* Grade Modal Month Comparison & Good Quiz Star */
+.grade-month-comparison {
+  background: #f8fafc;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.82rem;
+}
+
+.grade-comp-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.grade-comp-badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.grade-comp-badge.existing {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+}
+
+.grade-comp-badge.fresh {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.quiz-row-pct-pill.is-good {
+  background: rgba(16, 185, 129, 0.14);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.quiz-row-pct-pill.is-low {
+  background: rgba(244, 63, 94, 0.1);
+  color: #e11d48;
+  border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+/* Detail Modal Gift Quest Game Board */
+.detail-gift-quest-board {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(245, 158, 11, 0.08));
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 18px;
+}
+
+.detail-quest-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.detail-quest-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-gift-quest-board .quest-step-dot {
+  height: 28px;
+  font-size: 0.75rem;
+}
+
+.prev-month-badge {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 /* Custom scrollbar */
@@ -898,11 +1271,10 @@ body.light-theme .app-header {
 .toolbar-section {
   padding: 16px 20px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
   margin-bottom: 24px;
-  flex-wrap: wrap;
 }
 
 .toolbar-left {
@@ -2795,6 +3167,15 @@ body.arabic-mode {
 
 [dir="rtl"] .photo-upload-wrapper {
   flex-direction: row;
+}
+
+[dir="rtl"] .custom-select-sm {
+  padding: 6px 12px 6px 32px;
+}
+
+[dir="rtl"] .quest-progress-count {
+  direction: ltr;
+  display: inline-block;
 }
 
 [dir="rtl"] .gift-item {

@@ -6,7 +6,7 @@
  * - Admin Mode: Full access to raw grades, tests builder, student CRUD, table view
  * - Discreet Admin Access: Brand logo trigger, Ctrl+Shift+A shortcut, #admin URL trigger
  * - Multi-Quiz per month evaluation (Combined percentage depends on all tests)
- * - Quiz Gift qualification (Combined Quiz % >= 16%)
+ * - Quiz Gift Quest qualification (10 good quizzes > 70%)
  * - Student of the Month Spotlight & Momentum Velocity Tracking
  * - Student Photo / Avatar management with client-side compression
  * - Full Arabic Language version with RTL layout & English bilingual support
@@ -22,7 +22,12 @@
   const ROLE_STORAGE_KEY = 'edutrack_admin_session';
   const LANG_STORAGE_KEY = 'edutrack_lang_pref';
   const ADMIN_PASSCODE = 'admin123';
-  const GIFT_QUIZ_THRESHOLD_PERCENT = 16.0; // Rule: above 16% on combined quiz gets gift
+  const GIFT_REQUIRED_GOOD_QUIZZES = 10; // Must have 10 good quizzes to unlock a gift
+  const GOOD_QUIZ_THRESHOLD_PERCENT = 70.0; // Quiz score > 70% counts as a "good quiz" star
+
+  function isGoodQuizPercent(pct) {
+    return Number(pct) > GOOD_QUIZ_THRESHOLD_PERCENT;
+  }
 
   // =========================================================================
   // MODERN CRISP SVG ICON REGISTRY
@@ -38,6 +43,7 @@
     sun: '<svg class="svg-icon md" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41m14.14-14.14-1.41 1.41"/></svg>',
     crown: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>',
     gift: '<svg class="svg-icon xs" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13m7-9v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.5 4.5 0 0 1 12 7.5a4.5 4.5 0 0 1 4.5-4.5 2.5 2.5 0 0 1 0 5"/></svg>',
+    star: '<svg class="svg-icon xs" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
     forward: '<svg class="svg-icon xs" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
     backward: '<svg class="svg-icon xs" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></svg>',
     stagnant: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
@@ -47,13 +53,60 @@
     trash: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>'
   };
 
+  const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const MONTH_NAMES_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
+  function formatMonthKey(key) {
+    const [y, m] = String(key).split('-').map(Number);
+    if (!y || !m || m < 1 || m > 12) return { key, labelEn: key, labelAr: key };
+    return {
+      key,
+      labelEn: `${MONTH_NAMES_EN[m - 1]} ${y}`,
+      labelAr: `${MONTH_NAMES_AR[m - 1]} ${y}`
+    };
+  }
+
+  function getCurrentCalendarMonthKey() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  }
+
+  function getOffsetMonthKey(baseKey, offsetMonths) {
+    const [y, m] = String(baseKey).split('-').map(Number);
+    if (!y || !m) return baseKey;
+    const d = new Date(y, m - 1 + offsetMonths, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+
   // Academic months supported (chronological, newest first)
-  const AVAILABLE_MONTHS = [
-    { key: '2026-11', labelEn: 'November 2026', labelAr: 'نوفمبر 2026' },
-    { key: '2026-10', labelEn: 'October 2026', labelAr: 'أكتوبر 2026' },
-    { key: '2026-09', labelEn: 'September 2026', labelAr: 'سبتمبر 2026' },
-    { key: '2026-08', labelEn: 'August 2026', labelAr: 'أغسطس 2026' }
-  ];
+  let AVAILABLE_MONTHS = [];
+
+  function syncAvailableMonths(studentsList = []) {
+    const keys = new Set();
+    const currentKey = getCurrentCalendarMonthKey();
+    // Always cover at least last 5 months + current + next month
+    for (let i = -5; i <= 1; i++) {
+      keys.add(getOffsetMonthKey(currentKey, i));
+    }
+    // Also ensure 2026-08..2026-12 baseline and any recorded month keys are included
+    ['2026-08', '2026-09', '2026-10', '2026-11', '2026-12'].forEach(k => keys.add(k));
+    if (Array.isArray(studentsList)) {
+      studentsList.forEach(s => {
+        if (s && s.records) {
+          Object.keys(s.records).forEach(k => {
+            if (/^\d{4}-\d{2}$/.test(k)) keys.add(k);
+          });
+        }
+      });
+    }
+    AVAILABLE_MONTHS = Array.from(keys)
+      .sort((a, b) => b.localeCompare(a))
+      .map(formatMonthKey);
+  }
+
+  syncAvailableMonths();
 
   // =========================================================================
   // COMPLETE BILINGUAL TRANSLATION REGISTRY (EN / AR)
@@ -83,11 +136,18 @@
       spotlightNoRecords: 'No graded records available for this month yet.',
       topMonthlyPerformer: 'Top Monthly Performer',
       celebrate: 'Celebrate',
-      giftClubTitle: 'Gift Award Club',
-      giftClubDesc: 'Students with Quiz Score',
-      qualifiedCount: '{n} Qualified',
-      giftRewardNote: "Qualified students receive special monthly awards & recognition gifts!",
-      noGiftWinners: "No students scored ≥ {threshold}% on this month's quiz.",
+      viewingMonthLabel: 'Viewing Month:',
+      monthFilterLabel: 'Month Filter:',
+      currentMonthBtn: 'Current Month',
+      previousMonthBtn: 'Previous Month',
+      giftClubTitle: 'Gift Quest Arena',
+      giftClubDesc: 'Collect',
+      goodQuizzesLabel: 'Good Quizzes',
+      goodQuizMinHint: '(> 70% each)',
+      goodQuizzesMonthLabel: 'Good Quizzes (> 70%)',
+      qualifiedCount: '{n} Unlocked',
+      giftRewardNote: 'Complete 10 good quizzes (> 70%) to unlock your special reward gift!',
+      noGiftWinners: 'Add students or record quizzes (> 70%) to start the 10-star Gift Quest!',
       classMomentum: 'Class Momentum',
       classMomentumDesc: 'Trajectory vs. Previous Month',
       movingForward: 'Moving Forward',
@@ -102,7 +162,8 @@
       filterForward: 'Moving Forward',
       filterBackward: 'Going Back',
       filterStagnant: 'Not Working',
-      filterGift: 'Gift Qualified',
+      filterGift: 'Gift Unlocked',
+      filterQuest: 'In Gift Quest',
       viewCards: 'Cards',
       viewTable: 'Table',
       addStudent: 'Add Student',
@@ -110,8 +171,9 @@
       thGradeLevel: 'Class/Grade',
       thQuizResult: 'Quiz Result',
       thQuizPct: 'Quiz %',
-      thGiftStatus: 'Gift Status',
-      thMonthlyScore: 'Monthly Score',
+      thGiftStatus: 'Gift Quest',
+      thPrevMonth: 'Previous Month',
+      thMonthlyScore: 'Current Score',
       thTrajectory: 'Trajectory',
       thRemarks: 'Remarks',
       thActions: 'Actions',
@@ -120,7 +182,7 @@
       resetFilters: 'Reset Filters',
       rulesTitle: 'System Rules & Performance Criteria',
       giftAwardBadge: 'Gift Award',
-      giftRuleDesc: 'Granted when a student achieves ≥ 16% (or higher) on their monthly quiz test.',
+      giftRuleDesc: 'Unlocked when a student completes 10 good quizzes (> 70% each).',
       forwardRuleDesc: 'Student is progressing! Monthly score increased compared to the previous month.',
       backwardRuleDesc: 'Regression alert! Monthly score dropped from the previous month. Requires teacher guidance.',
       stagnantRuleDesc: 'Student is inactive, showed 0 progress, or grades consistently below minimum passing standards.',
@@ -139,8 +201,8 @@
       adminOnly: '🔒 Admin Only',
       notGraded: 'Not Graded',
       topStudentRibbon: 'Top Student',
-      giftQualified: 'Gift Qualified',
-      noGift: 'No Gift',
+      giftQualified: 'Gift Unlocked!',
+      noGift: 'In Quest',
       viewProfile: 'Profile',
       gradeBtn: 'Grade',
       editBtn: 'Edit',
@@ -184,10 +246,10 @@
       hdrQuizPct: '%',
       totalPointsLabel: 'Total Points',
       combinedQuizPctLabel: 'Combined Quiz %',
-      giftQualificationLabel: 'Gift Qualification (≥16%)',
+      giftQualificationLabel: 'Gift Quest (10 Good Quizzes)',
       enterScoresPrompt: 'Enter test scores',
-      qualifiedGiftMsg: 'Qualified for Gift Reward! (≥16%)',
-      notQualifiedGiftMsg: 'Not Qualified (<16%)',
+      qualifiedGiftMsg: 'Gift Unlocked! (10/10 Good Quizzes)',
+      notQualifiedGiftMsg: '{n}/10 Good Quizzes (>70%)',
       overallGradeLabel: 'Overall Monthly Score (0 - 100) *',
       useQuizPctBtn: 'Use Quiz %',
       remarksLabel: 'Monthly Feedback / Remarks',
@@ -201,8 +263,8 @@
       deleteConfirmPrompt: 'Are you sure you want to delete this student and all associated monthly records?',
       deleteWarningText: 'This action cannot be undone.',
       deletePermanentlyBtn: 'Delete Permanently',
-      yesGift: 'Yes (≥16%)',
-      noGiftBadge: 'No',
+      yesGift: 'Gift Unlocked!',
+      noGiftBadge: 'In Quest',
       testsCount: 'tests',
       toastAdminSuccess: 'Logged in as Admin successfully!',
       toastAdminLogout: 'Exited Admin mode successfully.',
@@ -242,11 +304,18 @@
       spotlightNoRecords: 'لا توجد سجلات درجات مرصودة لهذا الشهر بعد.',
       topMonthlyPerformer: 'الطالب المتصدر شهرياً',
       celebrate: 'احتفال',
-      giftClubTitle: 'نادي جوائز التميز',
-      giftClubDesc: 'الطلاب الحاصلون على درجة اختبار',
-      qualifiedCount: '{n} فائز مؤهل',
-      giftRewardNote: 'يحصل الطلاب المؤهلون على شهادات وجوائز تقديرية شهرية خاصة!',
-      noGiftWinners: 'لم يحصل أي طالب على نسبة ≥ {threshold}% في اختبارات هذا الشهر.',
+      viewingMonthLabel: 'الشهر المعروض:',
+      monthFilterLabel: 'تصفية الشهر:',
+      currentMonthBtn: 'الشهر الحالي',
+      previousMonthBtn: 'الشهر السابق',
+      giftClubTitle: 'ساحة سباق الهدايا',
+      giftClubDesc: 'اجمع',
+      goodQuizzesLabel: 'اختبارات متميزة',
+      goodQuizMinHint: '(أعلى من 70% لكل اختبار)',
+      goodQuizzesMonthLabel: 'اختبارات متميزة (>70%)',
+      qualifiedCount: '{n} فائز',
+      giftRewardNote: 'أكمل 10 اختبارات متميزة (أعلى من 70%) لفتح هديتك التقديرية!',
+      noGiftWinners: 'أضف طلاباً أو رصد درجات اختبارات (>70%) لبدء سباق الـ 10 نجوم!',
       classMomentum: 'مؤشر تقدم الفصل',
       classMomentumDesc: 'المسار مقارنة بالشهر السابق',
       movingForward: 'تقدم مستمر',
@@ -261,7 +330,8 @@
       filterForward: 'تقدم مستمر',
       filterBackward: 'تراجع',
       filterStagnant: 'غير نشط',
-      filterGift: 'مؤهل للجائزة',
+      filterGift: 'فاز بالهدية',
+      filterQuest: 'في سباق الهدية',
       viewCards: 'بطاقات',
       viewTable: 'جدول',
       addStudent: 'إضافة طالب',
@@ -269,8 +339,9 @@
       thGradeLevel: 'الصف / المرحلة',
       thQuizResult: 'نتيجة الاختبار',
       thQuizPct: 'نسبة الاختبار %',
-      thGiftStatus: 'حالة الجائزة',
-      thMonthlyScore: 'الدرجة الشهرية',
+      thGiftStatus: 'سباق الهدية',
+      thPrevMonth: 'الشهر السابق',
+      thMonthlyScore: 'الدرجة الحالية',
       thTrajectory: 'مسار التقدم',
       thRemarks: 'ملاحظات',
       thActions: 'إجراءات',
@@ -279,7 +350,7 @@
       resetFilters: 'إعادة تعيين الفلاتر',
       rulesTitle: 'قواعد النظام ومعايير الأداء الأكاديمي',
       giftAwardBadge: 'جائزة التميز',
-      giftRuleDesc: 'تُمنح للطالب الذي يحقق 16% أو أكثر في اختباراته الشهرية.',
+      giftRuleDesc: 'تُفتح الهدية عند إكمال الطالب 10 اختبارات متميزة (أعلى من 70% لكل اختبار).',
       forwardRuleDesc: 'الطالب في مسار تصاعدي! ارتفعت درجاته مقارنة بالشهر السابق.',
       backwardRuleDesc: 'تنبيه تراجع! انخفضت الدرجة عن الشهر السابق، يحتاج إلى دعم وإرشاد.',
       stagnantRuleDesc: 'الطالب غير نشط، لم يحرز تقدماً، أو درجاته دون مستوى النجاح.',
@@ -298,8 +369,8 @@
       adminOnly: '🔒 للمسؤول فقط',
       notGraded: 'لم يُرصد بعد',
       topStudentRibbon: 'طالب الشهر',
-      giftQualified: 'مؤهل للجائزة',
-      noGift: 'غير مؤهل',
+      giftQualified: 'فاز بالهدية!',
+      noGift: 'في السباق',
       viewProfile: 'الملف الشخصي',
       gradeBtn: 'رصد الدرجات',
       editBtn: 'تعديل',
@@ -343,10 +414,10 @@
       hdrQuizPct: '%',
       totalPointsLabel: 'مجموع النقاط',
       combinedQuizPctLabel: 'نسبة الاختبارات المجمعة',
-      giftQualificationLabel: 'أهلية الجائزة (≥16%)',
+      giftQualificationLabel: 'سباق الهدية (10 اختبارات متميزة)',
       enterScoresPrompt: 'أدخل درجات الاختبار',
-      qualifiedGiftMsg: 'مؤهل لجائزة التميز! (≥16%)',
-      notQualifiedGiftMsg: 'غير مؤهل للجائزة (<16%)',
+      qualifiedGiftMsg: 'تم فتح الهدية! (10/10 اختبارات متميزة)',
+      notQualifiedGiftMsg: '{n}/10 اختبارات متميزة (>70%)',
       overallGradeLabel: 'الدرجة الشهرية العامة (0 - 100) *',
       useQuizPctBtn: 'استخدام نسبة الاختبار',
       remarksLabel: 'ملاحظات وتوجيهات الشهر',
@@ -360,8 +431,8 @@
       deleteConfirmPrompt: 'هل أنت متأكد من رغبتك في حذف هذا الطالب وجميع سجلاته الشهرية؟',
       deleteWarningText: 'لا يمكن التراجع عن هذا الإجراء.',
       deletePermanentlyBtn: 'حذف نهائي',
-      yesGift: 'نعم (≥16%)',
-      noGiftBadge: 'لا',
+      yesGift: 'فاز بالهدية!',
+      noGiftBadge: 'قيد التقدم',
       testsCount: 'اختبارات',
       toastAdminSuccess: 'تم تسجيل الدخول كمسؤول بنجاح!',
       toastAdminLogout: 'تم الخروج من وضع المسؤول بنجاح.',
@@ -382,8 +453,8 @@
   // Application State
   let state = {
     isAdmin: false,
-    selectedMonth: '2026-10', // Default active month
-    activeFilter: 'all',      // 'all' | 'forward' | 'backward' | 'stagnant' | 'gift'
+    selectedMonth: getCurrentCalendarMonthKey(), // Default to current calendar month
+    activeFilter: 'all',      // 'all' | 'forward' | 'backward' | 'stagnant' | 'gift' | 'quest'
     searchQuery: '',
     viewMode: 'grid',         // 'grid' | 'table'
     lang: 'ar',               // 'ar' | 'en' - Arabic version default
@@ -446,7 +517,9 @@
     langToggleBtn: document.getElementById('lang-toggle-btn'),
     langBtnText: document.getElementById('lang-btn-text'),
 
-    // Highlights
+    // Highlights & Active Month Banner
+    activeMonthBannerLabel: document.getElementById('active-month-banner-label'),
+    prevMonthBannerHint: document.getElementById('prev-month-banner-hint'),
     spotlightContent: document.getElementById('spotlight-content'),
     btnCelebrate: document.getElementById('btn-celebrate'),
     giftQualifiedList: document.getElementById('gift-qualified-list'),
@@ -460,7 +533,12 @@
     classAvgDisplay: document.getElementById('class-avg-display'),
     classAvgProgressBar: document.getElementById('class-avg-progress-bar'),
 
-    // Toolbar
+    // Toolbar & Month Filter
+    toolbarMonthSelect: document.getElementById('toolbar-month-select'),
+    btnFilterCurrMonth: document.getElementById('btn-filter-curr-month'),
+    btnFilterPrevMonth: document.getElementById('btn-filter-prev-month'),
+    currMonthBtnTag: document.getElementById('curr-month-btn-tag'),
+    prevMonthBtnTag: document.getElementById('prev-month-btn-tag'),
     searchInput: document.getElementById('student-search-input'),
     clearSearchBtn: document.getElementById('clear-search-btn'),
     filterPills: document.querySelectorAll('.filter-pill'),
@@ -469,6 +547,7 @@
     countBackward: document.getElementById('count-backward'),
     countStagnant: document.getElementById('count-stagnant'),
     countGift: document.getElementById('count-gift'),
+    countQuest: document.getElementById('count-quest'),
     btnViewGrid: document.getElementById('btn-view-grid'),
     btnViewTable: document.getElementById('btn-view-table'),
     btnAddStudent: document.getElementById('btn-add-student'),
@@ -510,11 +589,13 @@
     gradeStudentId: document.getElementById('grade-student-id'),
     gradeModalStudentName: document.getElementById('grade-modal-student-name'),
     gradeMonthSelect: document.getElementById('grade-month-select'),
+    gradeMonthComparisonBox: document.getElementById('grade-month-comparison-box'),
     gradeAttendanceStatus: document.getElementById('grade-attendance-status'),
     quizRowsList: document.getElementById('quiz-rows-list'),
     btnAddQuizRow: document.getElementById('btn-add-quiz-row'),
     quizTotalPointsDisplay: document.getElementById('quiz-total-points-display'),
     quizCalcPreview: document.getElementById('quiz-calc-preview'),
+    quizGoodCountDisplay: document.getElementById('quiz-good-count-display'),
     quizGiftStatusText: document.getElementById('quiz-gift-status-text'),
     btnSyncOverallFromQuiz: document.getElementById('btn-sync-overall-from-quiz'),
     btnSyncPctVal: document.getElementById('btn-sync-pct-val'),
@@ -529,6 +610,7 @@
     detailModalName: document.getElementById('detail-modal-name'),
     detailModalId: document.getElementById('detail-modal-id'),
     detailModalGrade: document.getElementById('detail-modal-grade'),
+    detailGiftQuestBoard: document.getElementById('detail-gift-quest-board'),
     detailHistoryContainer: document.getElementById('detail-history-container'),
     detailTrajectoryInsights: document.getElementById('detail-trajectory-insights'),
     btnDetailAddGrade: document.getElementById('btn-detail-add-grade'),
@@ -601,6 +683,7 @@
 
     // Re-populate month options with current language
     populateMonthSelectors();
+    updateMonthFilterUI();
 
     // Refresh role UI text
     updateRoleUI();
@@ -660,17 +743,73 @@
   setInterval(checkDbHealth, 8000);
 
   function findBestActiveMonth() {
+    syncAvailableMonths(state.students);
+    const currCalKey = getCurrentCalendarMonthKey();
+
     // If selectedMonth already has records, keep it
     const currentHasRecords = state.students && state.students.some(s => s.records && s.records[state.selectedMonth]);
     if (currentHasRecords) return state.selectedMonth;
 
-    // Otherwise find the first available month that has records
+    // Prefer current calendar month if it has records
+    if (state.students && state.students.some(s => s.records && s.records[currCalKey])) {
+      return currCalKey;
+    }
+
+    // Otherwise find the newest available month that has records
     for (const m of AVAILABLE_MONTHS) {
       if (state.students && state.students.some(s => s.records && s.records[m.key])) {
         return m.key;
       }
     }
-    return AVAILABLE_MONTHS[0].key;
+    return currCalKey;
+  }
+
+  function setSelectedMonth(monthKey) {
+    if (!monthKey) return;
+    state.selectedMonth = monthKey;
+    syncAvailableMonths(state.students);
+    populateMonthSelectors();
+    updateMonthFilterUI();
+    renderHighlights();
+    renderStudents();
+  }
+
+  function updateMonthFilterUI() {
+    const currCalKey = getCurrentCalendarMonthKey();
+    const prevCalKey = getOffsetMonthKey(currCalKey, -1);
+    const prevOfSelectedKey = getPreviousMonthKey(state.selectedMonth) || getOffsetMonthKey(state.selectedMonth, -1);
+    const isAr = (state.lang === 'ar');
+
+    if (elements.activeMonthBannerLabel) {
+      elements.activeMonthBannerLabel.textContent = getMonthLabel(state.selectedMonth);
+    }
+    if (elements.prevMonthBannerHint) {
+      const prevLabel = getMonthLabel(prevOfSelectedKey);
+      elements.prevMonthBannerHint.textContent = isAr
+        ? `مقارنة بـ ${prevLabel}`
+        : `vs. ${prevLabel}`;
+    }
+
+    if (elements.currMonthBtnTag) {
+      elements.currMonthBtnTag.textContent = `(${getMonthLabel(currCalKey).split(' ')[0]})`;
+    }
+    if (elements.prevMonthBtnTag) {
+      elements.prevMonthBtnTag.textContent = `(${getMonthLabel(prevCalKey).split(' ')[0]})`;
+    }
+
+    if (elements.btnFilterCurrMonth) {
+      elements.btnFilterCurrMonth.classList.toggle('active', state.selectedMonth === currCalKey);
+    }
+    if (elements.btnFilterPrevMonth) {
+      elements.btnFilterPrevMonth.classList.toggle('active', state.selectedMonth === prevCalKey);
+    }
+
+    if (elements.monthSelect && elements.monthSelect.value !== state.selectedMonth) {
+      elements.monthSelect.value = state.selectedMonth;
+    }
+    if (elements.toolbarMonthSelect && elements.toolbarMonthSelect.value !== state.selectedMonth) {
+      elements.toolbarMonthSelect.value = state.selectedMonth;
+    }
   }
 
   function loadInitialLocalData() {
@@ -715,6 +854,8 @@
           saveData();
           updateDbStatus('connected', 'cloudDbConnected', 'MongoDB Atlas Connected');
           state.selectedMonth = findBestActiveMonth();
+          populateMonthSelectors();
+          updateMonthFilterUI();
           renderHighlights();
           renderStudents();
           return;
@@ -730,6 +871,8 @@
     }
 
     state.selectedMonth = findBestActiveMonth();
+    populateMonthSelectors();
+    updateMonthFilterUI();
     renderHighlights();
     renderStudents();
   }
@@ -906,20 +1049,114 @@
   }
 
   // =========================================================================
-  // CALCULATION & TRAJECTORY ENGINE
+  // CALCULATION, GIFT QUEST (10 GOOD QUIZZES > 70%) & TRAJECTORY ENGINE
   // =========================================================================
   function getPreviousMonthKey(currentMonthKey) {
     const idx = AVAILABLE_MONTHS.findIndex(m => m.key === currentMonthKey);
     if (idx !== -1 && idx < AVAILABLE_MONTHS.length - 1) {
       return AVAILABLE_MONTHS[idx + 1].key;
     }
-    return null;
+    return getOffsetMonthKey(currentMonthKey, -1);
+  }
+
+  function evaluateGiftQuest(student, upToMonthKey = null, draftOverride = null) {
+    const records = (student && student.records) ? student.records : {};
+    const monthKeys = new Set(Object.keys(records));
+    if (draftOverride && draftOverride.monthKey) {
+      monthKeys.add(draftOverride.monthKey);
+    }
+
+    let goodQuizzes = 0;
+    let totalQuizzes = 0;
+    let goodQuizzesInTargetMonth = 0;
+
+    Array.from(monthKeys).sort().forEach(mKey => {
+      if (upToMonthKey && mKey > upToMonthKey) return;
+
+      let quizzesList = null;
+      if (draftOverride && draftOverride.monthKey === mKey) {
+        quizzesList = Array.isArray(draftOverride.quizzes) ? draftOverride.quizzes : [];
+      } else {
+        const rec = records[mKey];
+        if (!rec) return;
+        if (Array.isArray(rec.quizzes) && rec.quizzes.length > 0) {
+          quizzesList = rec.quizzes;
+        } else if (rec.quizMax > 0) {
+          quizzesList = [{ title: 'Quiz', score: Number(rec.quizScore) || 0, maxScore: Number(rec.quizMax) }];
+        } else {
+          quizzesList = [];
+        }
+      }
+
+      quizzesList.forEach(q => {
+        const maxNum = Number(q.maxScore) || 0;
+        const scoreNum = Number(q.score) || 0;
+        if (maxNum <= 0) return;
+        // Skip unentered empty draft scores if maxScore was default but user left score blank
+        if (q.isEmpty) return;
+        totalQuizzes++;
+        const pct = (scoreNum / maxNum) * 100;
+        if (isGoodQuizPercent(pct)) {
+          goodQuizzes++;
+          if (upToMonthKey && mKey === upToMonthKey) {
+            goodQuizzesInTargetMonth++;
+          }
+        }
+      });
+    });
+
+    const hasGift = goodQuizzes >= GIFT_REQUIRED_GOOD_QUIZZES;
+    const giftsEarned = Math.floor(goodQuizzes / GIFT_REQUIRED_GOOD_QUIZZES);
+    const stepProgress = Math.min(GIFT_REQUIRED_GOOD_QUIZZES, goodQuizzes);
+    const remaining = Math.max(0, GIFT_REQUIRED_GOOD_QUIZZES - goodQuizzes);
+    const progressPercent = Math.min(100, Math.round((stepProgress / GIFT_REQUIRED_GOOD_QUIZZES) * 100));
+
+    let tier = 'ready';
+    if (hasGift) tier = 'unlocked';
+    else if (goodQuizzes >= 7) tier = 'almost';
+    else if (goodQuizzes >= 4) tier = 'leveling';
+    else if (goodQuizzes >= 1) tier = 'started';
+
+    return {
+      goodQuizzes,
+      goodQuizzesInTargetMonth,
+      totalQuizzes,
+      giftsEarned,
+      hasGift,
+      stepProgress,
+      remaining,
+      progressPercent,
+      tier
+    };
+  }
+
+  function renderQuestStepsHtml(goodQuizzes) {
+    const filled = Math.min(GIFT_REQUIRED_GOOD_QUIZZES, goodQuizzes);
+    const isUnlocked = goodQuizzes >= GIFT_REQUIRED_GOOD_QUIZZES;
+    let stepsHtml = '';
+    for (let i = 1; i <= GIFT_REQUIRED_GOOD_QUIZZES; i++) {
+      const isEarned = i <= filled;
+      const isNext = !isUnlocked && i === filled + 1;
+      const cls = isEarned ? 'earned' : (isNext ? 'next' : '');
+      stepsHtml += `<div class="quest-step-dot ${cls}" title="${i}/${GIFT_REQUIRED_GOOD_QUIZZES}">${isEarned ? AppIcons.star : i}</div>`;
+    }
+    return `
+      <div class="quest-steps-row">
+        <div class="quest-steps-track">${stepsHtml}</div>
+        <div class="quest-chest-node ${isUnlocked ? 'unlocked' : ''}" title="${isUnlocked ? t('giftQualified') : `${filled}/${GIFT_REQUIRED_GOOD_QUIZZES}`}">
+          ${AppIcons.gift}
+        </div>
+      </div>
+    `;
   }
 
   function evaluateStudentTrajectory(student, monthKey) {
     const currentRec = student.records ? student.records[monthKey] : null;
     const prevMonthKey = getPreviousMonthKey(monthKey);
     const prevRec = (student.records && prevMonthKey) ? student.records[prevMonthKey] : null;
+    const giftQuest = evaluateGiftQuest(student, monthKey);
+    const prevScore = (prevRec && prevRec.overallScore !== undefined) ? Number(prevRec.overallScore) : null;
+    const prevQuizPercent = (prevRec && prevRec.quizPercent !== undefined) ? Number(prevRec.quizPercent) : null;
 
     if (!currentRec) {
       return {
@@ -927,7 +1164,12 @@
         label: t('notGraded'),
         delta: 0,
         hasRecord: false,
-        qualifiesForGift: false,
+        qualifiesForGift: giftQuest.hasGift,
+        giftQuest,
+        prevMonthKey,
+        prevRec,
+        prevScore,
+        prevQuizPercent,
         score: null,
         quizPercent: null,
         classRank: null
@@ -938,8 +1180,8 @@
     const quizPercent = Number(currentRec.quizPercent) || 0;
     const attendance = currentRec.attendance || 'Active';
 
-    // Gift Qualification Rule: Combined quiz percentage must be >= 16%
-    const qualifiesForGift = quizPercent >= GIFT_QUIZ_THRESHOLD_PERCENT;
+    // Gift Qualification Rule: 10 good quizzes (> 70% each)
+    const qualifiesForGift = giftQuest.hasGift;
 
     let delta = 0;
     let status = 'forward';
@@ -948,7 +1190,6 @@
     const isAr = (state.lang === 'ar');
 
     if (prevRec && prevRec.overallScore !== undefined) {
-      const prevScore = Number(prevRec.overallScore) || 0;
       delta = Number((currentScore - prevScore).toFixed(1));
 
       if (attendance === 'Absent' || currentScore < 35 || (attendance === 'Low' && currentScore < 50)) {
@@ -988,10 +1229,14 @@
       delta,
       hasRecord: true,
       currentRec,
+      prevMonthKey,
       prevRec,
+      prevScore,
+      prevQuizPercent,
       currentScore,
       quizPercent,
       qualifiesForGift,
+      giftQuest,
       attendance
     };
   }
@@ -1001,9 +1246,12 @@
   // =========================================================================
   function renderHighlights() {
     const monthKey = state.selectedMonth;
+    const isAr = (state.lang === 'ar');
     let topStudent = null;
     let topScore = -1;
-    let giftWinners = [];
+    let giftWinnersCount = 0;
+    let questInProgressCount = 0;
+    let questItems = [];
     let forwardCount = 0;
     let backwardCount = 0;
     let stagnantCount = 0;
@@ -1012,6 +1260,13 @@
 
     state.students.forEach(student => {
       const trajectory = evaluateStudentTrajectory(student, monthKey);
+      const quest = trajectory.giftQuest || evaluateGiftQuest(student, monthKey);
+
+      if (quest.hasGift) giftWinnersCount++;
+      else questInProgressCount++;
+
+      questItems.push({ student, trajectory, quest });
+
       if (!trajectory.hasRecord) return;
 
       recordedStudentCount++;
@@ -1030,11 +1285,6 @@
         if (Number(trajectory.quizPercent || 0) > Number(topStudent.trajectory.quizPercent || 0)) {
           topStudent = { student, trajectory };
         }
-      }
-
-      // Gift Qualification (>= 16%)
-      if (trajectory.qualifiesForGift) {
-        giftWinners.push({ student, trajectory });
       }
 
       // Momentum counts
@@ -1077,35 +1327,91 @@
       `;
     }
 
-    // 2. Render Gift Winners List
-    elements.giftThresholdDisplay.textContent = `${GIFT_QUIZ_THRESHOLD_PERCENT}%`;
-    elements.giftCountBadge.textContent = t('qualifiedCount', { n: giftWinners.length });
+    // 2. Render Gamified Gift Quest Arena (10 Good Quizzes > 70%)
+    if (elements.giftThresholdDisplay) {
+      elements.giftThresholdDisplay.textContent = `${GIFT_REQUIRED_GOOD_QUIZZES}`;
+    }
+    if (elements.giftCountBadge) {
+      elements.giftCountBadge.textContent = isAr
+        ? `${giftWinnersCount} فائز • ${questInProgressCount} في السباق`
+        : `${giftWinnersCount} Unlocked • ${questInProgressCount} In Quest`;
+    }
 
-    if (giftWinners.length > 0) {
-      elements.giftQualifiedList.innerHTML = giftWinners.map(item => {
-        const initial = item.student.name.charAt(0).toUpperCase();
-        const hasImg = Boolean(item.student.avatarUrl && item.student.avatarUrl.trim());
-        const giftScoreBadgeHtml = `<span class="gift-score-badge">${item.trajectory.quizPercent}%</span>`;
+    // Sort: highest goodQuizzes first, then highest current quizPercent
+    questItems.sort((a, b) => {
+      if (b.quest.goodQuizzes !== a.quest.goodQuizzes) {
+        return b.quest.goodQuizzes - a.quest.goodQuizzes;
+      }
+      return (Number(b.trajectory.quizPercent) || 0) - (Number(a.trajectory.quizPercent) || 0);
+    });
+
+    if (questItems.length > 0) {
+      elements.giftQualifiedList.innerHTML = questItems.map(({ student, quest }) => {
+        const initial = student.name.charAt(0).toUpperCase();
+        const hasImg = Boolean(student.avatarUrl && student.avatarUrl.trim());
+
+        let tierText = '';
+        let hintText = '';
+        if (quest.tier === 'unlocked') {
+          tierText = isAr ? '🎁 فاز بالهدية!' : '🎁 Gift Unlocked!';
+          hintText = isAr
+            ? `🎉 أكمل ${quest.goodQuizzes} اختبار متميز — مبروك!`
+            : `🎉 ${quest.goodQuizzes} good quizzes — Amazing work!`;
+        } else if (quest.tier === 'almost') {
+          tierText = isAr ? `🔥 باقي ${quest.remaining} فقط!` : `🔥 Only ${quest.remaining} left!`;
+          hintText = isAr
+            ? `قريب جداً من فتح هديتك!`
+            : `So close to unlocking your gift!`;
+        } else if (quest.tier === 'leveling') {
+          tierText = isAr ? `⚡ في التقدم` : `⚡ Leveling Up!`;
+          hintText = isAr
+            ? `باقي ${quest.remaining} اختبارات متميزة للهدية`
+            : `${quest.remaining} more good quizzes to go!`;
+        } else if (quest.tier === 'started') {
+          tierText = isAr ? `🚀 انطلق!` : `🚀 Quest Started!`;
+          hintText = isAr
+            ? `بداية رائعة! باقي ${quest.remaining} للهدية`
+            : `Great start! ${quest.remaining} more to unlock`;
+        } else {
+          tierText = isAr ? `🎯 ابدأ السباق` : `🎯 Ready to Start`;
+          hintText = isAr
+            ? `احصل على >70% في الاختبارات لجمع النجوم`
+            : `Score >70% on quizzes to collect stars`;
+        }
+
+        const countLabel = quest.giftsEarned > 1
+          ? `${quest.goodQuizzes} ⭐ (🎁 ×${quest.giftsEarned})`
+          : `${quest.stepProgress} / ${GIFT_REQUIRED_GOOD_QUIZZES} ⭐`;
 
         return `
-          <div class="gift-item">
-            <div class="gift-item-left">
-              <div class="gift-avatar-mini avatar-${item.student.avatarColor || 'indigo'} ${hasImg ? 'has-image' : ''}" title="${escapeHtml(item.student.name)}">
-                ${hasImg ? `<img src="${escapeHtml(item.student.avatarUrl)}" alt="${escapeHtml(item.student.name)}" class="avatar-img" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';" />` : ''}
-                <span class="avatar-fallback" ${hasImg ? 'style="display:none;"' : ''}>${initial}</span>
+          <div class="gift-quest-item ${quest.hasGift ? 'is-unlocked' : ''}" data-student-id="${student.id}" role="button" tabindex="0" title="${escapeHtml(student.name)}">
+            <div class="gift-quest-top">
+              <div class="gift-item-left">
+                <div class="gift-avatar-mini avatar-${student.avatarColor || 'indigo'} ${hasImg ? 'has-image' : ''}">
+                  ${hasImg ? `<img src="${escapeHtml(student.avatarUrl)}" alt="${escapeHtml(student.name)}" class="avatar-img" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';" />` : ''}
+                  <span class="avatar-fallback" ${hasImg ? 'style="display:none;"' : ''}>${initial}</span>
+                </div>
+                <span class="gift-student-name">${escapeHtml(student.name)}</span>
               </div>
-              <span class="gift-student-name">${escapeHtml(item.student.name)}</span>
+              <span class="gift-quest-tier ${quest.tier}">${tierText}</span>
             </div>
-            <div class="gift-item-right">
-              ${giftScoreBadgeHtml}
-              <span class="gift-box-icon" title="${t('giftQualified')} (&ge; 16%)">${AppIcons.gift}</span>
+
+            ${renderQuestStepsHtml(quest.goodQuizzes)}
+
+            <div class="quest-bar-track">
+              <div class="quest-bar-fill ${quest.hasGift ? 'unlocked' : ''}" style="width: ${quest.progressPercent}%;"></div>
+            </div>
+
+            <div class="quest-progress-meta">
+              <span>${hintText}</span>
+              <span class="quest-progress-count">${countLabel}</span>
             </div>
           </div>
         `;
       }).join('');
     } else {
       elements.giftQualifiedList.innerHTML = `
-        <div class="empty-desc" style="padding: 10px 0;">${t('noGiftWinners', { threshold: GIFT_QUIZ_THRESHOLD_PERCENT })}</div>
+        <div class="empty-desc" style="padding: 14px 0;">${t('noGiftWinners')}</div>
       `;
     }
 
@@ -1119,11 +1425,12 @@
     elements.classAvgProgressBar.style.width = `${Math.min(100, Math.max(0, classAvg))}%`;
 
     // Filter pill count badges
-    elements.countAll.textContent = state.students.length;
-    elements.countForward.textContent = forwardCount;
-    elements.countBackward.textContent = backwardCount;
-    elements.countStagnant.textContent = stagnantCount;
-    elements.countGift.textContent = giftWinners.length;
+    if (elements.countAll) elements.countAll.textContent = state.students.length;
+    if (elements.countForward) elements.countForward.textContent = forwardCount;
+    if (elements.countBackward) elements.countBackward.textContent = backwardCount;
+    if (elements.countStagnant) elements.countStagnant.textContent = stagnantCount;
+    if (elements.countGift) elements.countGift.textContent = giftWinnersCount;
+    if (elements.countQuest) elements.countQuest.textContent = questInProgressCount;
   }
 
   // =========================================================================
@@ -1160,6 +1467,7 @@
       if (state.activeFilter === 'backward') return traj.status === 'backward';
       if (state.activeFilter === 'stagnant') return traj.status === 'stagnant';
       if (state.activeFilter === 'gift') return traj.qualifiesForGift;
+      if (state.activeFilter === 'quest') return !traj.qualifiesForGift;
 
       return true;
     });
@@ -1218,16 +1526,23 @@
         : t('notGraded');
 
       const overallText = traj.hasRecord ? `${traj.currentScore}%` : '—';
+      const prevMonthShort = getMonthLabel(traj.prevMonthKey).split(' ')[0];
+      const currMonthShort = getMonthLabel(monthKey).split(' ')[0];
+      const prevComparisonText = traj.prevScore !== null
+        ? `${prevMonthShort}: ${traj.prevScore}%`
+        : `${prevMonthShort}: —`;
+      const quest = traj.giftQuest || evaluateGiftQuest(student, monthKey);
       const remarksText = (traj.hasRecord && traj.currentRec.remarks) ? traj.currentRec.remarks : (student.notes || (state.lang === 'ar' ? 'لا توجد ملاحظات مسجلة لهذا الشهر.' : 'No remarks recorded for this month.'));
 
-      // Metric Row: Admin sees full grades & test counts; Visitor sees ONLY the combined percentage!
+      // Metric Row: Admin sees current + previous month grades & test counts; Visitor sees ONLY the combined percentage!
       let metricRowHtml = '';
       if (state.isAdmin) {
         metricRowHtml = `
           <div class="metric-row">
             <div class="metric-col">
-              <span class="metric-label">${t('monthlyGrade')}</span>
+              <span class="metric-label">${currMonthShort} (${t('monthlyGrade')})</span>
               <span class="metric-val score-primary">${overallText}</span>
+              <span class="prev-month-badge">${prevComparisonText}</span>
               <span class="metric-sub">${traj.hasRecord ? `${t('effortLabel')}${traj.attendance}` : t('pendingEvaluation')}</span>
             </div>
             <div class="metric-col">
@@ -1243,7 +1558,7 @@
             <div class="metric-col single-metric">
               <span class="metric-label">${t('percentageLabel')}</span>
               <span class="metric-val score-primary" style="font-size: 1.35rem;">${traj.hasRecord ? `${traj.quizPercent}%` : '—'}</span>
-              <span class="metric-sub">${traj.hasRecord ? (traj.qualifiesForGift ? t('giftQualified') : t('pendingEvaluation')) : t('pendingEvaluation')}</span>
+              <span class="metric-sub">${traj.hasRecord ? (traj.qualifiesForGift ? t('giftQualified') : `${quest.stepProgress}/${GIFT_REQUIRED_GOOD_QUIZZES} ⭐`) : t('pendingEvaluation')}</span>
             </div>
           </div>
         `;
@@ -1254,10 +1569,8 @@
         : (traj.status === 'forward' ? t('movingForward') : (traj.status === 'backward' ? t('goingBack') : t('notWorking')));
 
       const giftBadgeHtml = traj.qualifiesForGift
-        ? `<span class="gift-award-badge" title="Quiz &ge; 16%: Earns a recognition gift!">${AppIcons.gift} ${t('giftQualified')}</span>`
-        : (state.isAdmin
-            ? `<span class="status-badge neutral" title="Quiz score below ${GIFT_QUIZ_THRESHOLD_PERCENT}% required for gift">${t('noGift')} (${traj.hasRecord ? `${traj.quizPercent}%` : '—'})</span>`
-            : `<span class="status-badge neutral" title="Quiz score below ${GIFT_QUIZ_THRESHOLD_PERCENT}% required for gift">${t('noGift')}</span>`);
+        ? `<span class="gift-award-badge" title="${t('giftQualified')}">${AppIcons.gift} ${t('giftQualified')} (${quest.goodQuizzes} ⭐)</span>`
+        : `<span class="status-badge neutral" title="${quest.remaining} more good quizzes (>70%)">${AppIcons.star} ${quest.stepProgress}/${GIFT_REQUIRED_GOOD_QUIZZES} ${t('noGift')}</span>`;
 
       return `
         <div class="card student-card ${isTop ? 'is-top-student' : ''}" data-student-id="${student.id}">
@@ -1314,8 +1627,10 @@
   }
 
   function renderTableView(students, topStudentId, monthKey) {
+    const prevMonthShort = getMonthLabel(getPreviousMonthKey(monthKey)).split(' ')[0];
     elements.studentsTableBody.innerHTML = students.map(student => {
       const traj = evaluateStudentTrajectory(student, monthKey);
+      const quest = traj.giftQuest || evaluateGiftQuest(student, monthKey);
       const isTop = (student.id === topStudentId && traj.hasRecord && traj.currentScore > 0);
 
       return `
@@ -1332,16 +1647,21 @@
           <td>${student.gradeLevel || '—'}</td>
           <td>${traj.hasRecord ? `${traj.currentRec.quizScore} / ${traj.currentRec.quizMax}` : '—'}</td>
           <td>
-            <strong style="color: ${traj.quizPercent >= GIFT_QUIZ_THRESHOLD_PERCENT ? '#10b981' : '#f43f5e'};">
+            <strong style="color: ${traj.hasRecord && isGoodQuizPercent(traj.quizPercent) ? '#10b981' : '#f43f5e'};">
               ${traj.hasRecord ? `${traj.quizPercent}%` : '—'}
             </strong>
           </td>
           <td>
             ${traj.qualifiesForGift ? `
-              <span class="gift-award-badge" style="font-size: 0.7rem; padding: 2px 8px;">${AppIcons.gift} ${t('yesGift')}</span>
+              <span class="gift-award-badge" style="font-size: 0.7rem; padding: 2px 8px;">${AppIcons.gift} ${t('yesGift')} (${quest.goodQuizzes} ⭐)</span>
             ` : `
-              <span class="status-badge neutral" style="font-size: 0.7rem; padding: 2px 8px;">${t('noGiftBadge')}</span>
+              <span class="status-badge neutral" style="font-size: 0.7rem; padding: 2px 8px;">${AppIcons.star} ${quest.stepProgress}/${GIFT_REQUIRED_GOOD_QUIZZES}</span>
             `}
+          </td>
+          <td>
+            <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">
+              ${traj.prevScore !== null ? `${traj.prevScore}% (${prevMonthShort})` : '—'}
+            </span>
           </td>
           <td>
             <span style="font-size: 1.05rem; font-weight: 700; color: #818cf8;">
@@ -1661,12 +1981,16 @@
   // =========================================================================
   function createQuizRowHtml(quiz = { title: 'Quiz 1', score: '', maxScore: 20 }) {
     const titleVal = escapeHtml(quiz.title || (state.lang === 'ar' ? 'اختبار' : 'Quiz'));
-    const scoreVal = (quiz.score !== undefined && quiz.score !== null && !isNaN(quiz.score)) ? quiz.score : '';
+    const scoreVal = (quiz.score !== undefined && quiz.score !== null && quiz.score !== '' && !isNaN(quiz.score)) ? quiz.score : '';
     const maxVal = (quiz.maxScore !== undefined && quiz.maxScore !== null && !isNaN(quiz.maxScore)) ? quiz.maxScore : 20;
 
-    let rowPct = '0.0%';
+    let rowPct = '—';
+    let pillClass = '';
     if (scoreVal !== '' && maxVal > 0) {
-      rowPct = `${((Number(scoreVal) / Number(maxVal)) * 100).toFixed(1)}%`;
+      const pctNum = Number(((Number(scoreVal) / Number(maxVal)) * 100).toFixed(1));
+      const good = isGoodQuizPercent(pctNum);
+      rowPct = `${pctNum}%${good ? ' ⭐' : ''}`;
+      pillClass = good ? 'is-good' : 'is-low';
     }
 
     const titlePlaceholder = (state.lang === 'ar') ? 'مثال: اختبار 1 أو واجب' : 'e.g. Quiz 1 or Test';
@@ -1684,7 +2008,7 @@
           <input type="number" class="form-input form-input-sm quiz-max-input" min="0.5" max="1000" step="0.5" placeholder="Max" value="${maxVal}" required>
         </div>
         <div class="quiz-col-input-pct">
-          <span class="quiz-row-pct-pill">${rowPct}</span>
+          <span class="quiz-row-pct-pill ${pillClass}">${rowPct}</span>
         </div>
         <div class="quiz-col-action">
           <button type="button" class="btn-remove-quiz-row" title="Remove this test">&times;</button>
@@ -1693,13 +2017,51 @@
     `;
   }
 
+  function updateGradeMonthComparison(student, targetMonthKey, currentPercent, hasEnteredScores) {
+    if (!elements.gradeMonthComparisonBox) return;
+    const isAr = (state.lang === 'ar');
+    const existingTargetRec = (student && student.records) ? student.records[targetMonthKey] : null;
+    const prevKey = getPreviousMonthKey(targetMonthKey);
+    const prevRec = (student && student.records && prevKey) ? student.records[prevKey] : null;
+
+    const targetLabel = getMonthLabel(targetMonthKey);
+    const prevLabel = getMonthLabel(prevKey);
+
+    const statusBadge = existingTargetRec
+      ? `<span class="grade-comp-badge existing">${isAr ? `تعديل سجل ${targetLabel}` : `Editing ${targetLabel}`}</span>`
+      : `<span class="grade-comp-badge fresh">${isAr ? `سجل جديد: ${targetLabel}` : `New: ${targetLabel}`}</span>`;
+
+    let prevHtml = '';
+    if (prevRec && prevRec.overallScore !== undefined) {
+      const prevScore = Number(prevRec.overallScore) || 0;
+      let deltaBadge = '';
+      if (hasEnteredScores) {
+        const diff = Number((currentPercent - prevScore).toFixed(1));
+        const sign = diff > 0 ? '+' : '';
+        const color = diff > 0 ? '#059669' : diff < 0 ? '#e11d48' : '#64748b';
+        deltaBadge = ` <strong style="color:${color};">(${sign}${diff}%)</strong>`;
+      }
+      prevHtml = `<span>${isAr ? 'الشهر السابق' : 'Previous'} (${prevLabel}): <strong>${prevScore}%</strong>${deltaBadge}</span>`;
+    } else {
+      prevHtml = `<span>${isAr ? 'الشهر السابق' : 'Previous'} (${prevLabel}): <em>${isAr ? 'لا توجد درجات' : 'No record'}</em></span>`;
+    }
+
+    elements.gradeMonthComparisonBox.innerHTML = `
+      <div class="grade-comp-item">${statusBadge}</div>
+      <div class="grade-comp-item">${prevHtml}</div>
+    `;
+  }
+
   function recalculateCombinedQuizzes() {
-    if (!elements.quizRowsList) return { totalScore: 0, totalMax: 0, combinedPercent: 0, quizzes: [] };
+    if (!elements.quizRowsList) return { totalScore: 0, totalMax: 0, combinedPercent: 0, quizzes: [], goodThisMonth: 0 };
 
     const rows = elements.quizRowsList.querySelectorAll('.quiz-item-row');
     const quizzes = [];
+    const draftQuizzes = [];
     let totalScore = 0;
     let totalMax = 0;
+    let goodThisMonth = 0;
+    let enteredCount = 0;
 
     rows.forEach(row => {
       const nameInput = row.querySelector('.quiz-name-input');
@@ -1714,15 +2076,29 @@
       const scoreNum = parseFloat(scoreRaw);
       const maxNum = parseFloat(maxRaw);
 
-      if (!isNaN(scoreNum) && !isNaN(maxNum) && maxNum > 0) {
+      if (scoreRaw !== '' && !isNaN(scoreNum) && !isNaN(maxNum) && maxNum > 0) {
         const rowPct = Number(((scoreNum / maxNum) * 100).toFixed(1));
-        if (pctBadge) pctBadge.textContent = `${rowPct}%`;
+        const isGood = isGoodQuizPercent(rowPct);
+        if (pctBadge) {
+          pctBadge.textContent = `${rowPct}%${isGood ? ' ⭐' : ''}`;
+          pctBadge.classList.toggle('is-good', isGood);
+          pctBadge.classList.toggle('is-low', !isGood);
+        }
         totalScore += scoreNum;
         totalMax += maxNum;
-        quizzes.push({ title: title || 'Quiz', score: scoreNum, maxScore: maxNum });
+        enteredCount++;
+        if (isGood) goodThisMonth++;
+        const quizObj = { title: title || 'Quiz', score: scoreNum, maxScore: maxNum };
+        quizzes.push(quizObj);
+        draftQuizzes.push(quizObj);
       } else {
-        if (pctBadge) pctBadge.textContent = '—';
-        quizzes.push({ title: title || 'Quiz', score: isNaN(scoreNum) ? 0 : scoreNum, maxScore: isNaN(maxNum) ? 20 : maxNum });
+        if (pctBadge) {
+          pctBadge.textContent = '—';
+          pctBadge.classList.remove('is-good', 'is-low');
+        }
+        const emptyObj = { title: title || 'Quiz', score: isNaN(scoreNum) ? 0 : scoreNum, maxScore: isNaN(maxNum) ? 20 : maxNum };
+        quizzes.push(emptyObj);
+        draftQuizzes.push({ ...emptyObj, isEmpty: true });
       }
     });
 
@@ -1734,21 +2110,33 @@
     if (elements.quizCalcPreview) {
       elements.quizCalcPreview.textContent = `${combinedPercent}%`;
     }
+    if (elements.quizGoodCountDisplay) {
+      elements.quizGoodCountDisplay.textContent = `${goodThisMonth} / ${enteredCount} ⭐`;
+    }
     if (elements.btnSyncPctVal) {
       elements.btnSyncPctVal.textContent = `${combinedPercent}%`;
     }
 
+    const studentId = elements.gradeStudentId ? elements.gradeStudentId.value : '';
+    const targetMonthKey = elements.gradeMonthSelect ? elements.gradeMonthSelect.value : state.selectedMonth;
+    const activeStudent = state.students.find(s => s.id === studentId);
+    const liveQuest = activeStudent
+      ? evaluateGiftQuest(activeStudent, null, { monthKey: targetMonthKey, quizzes: draftQuizzes })
+      : { goodQuizzes: goodThisMonth, hasGift: goodThisMonth >= GIFT_REQUIRED_GOOD_QUIZZES, stepProgress: Math.min(10, goodThisMonth) };
+
     if (elements.quizGiftStatusText) {
-      if (totalMax > 0) {
-        if (combinedPercent >= GIFT_QUIZ_THRESHOLD_PERCENT) {
-          elements.quizGiftStatusText.innerHTML = `<span style="color: #10b981; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">${AppIcons.gift} ${t('qualifiedGiftMsg')} (${combinedPercent}% &ge; ${GIFT_QUIZ_THRESHOLD_PERCENT}%)</span>`;
+      if (enteredCount > 0) {
+        if (liveQuest.hasGift) {
+          elements.quizGiftStatusText.innerHTML = `<span style="color: #10b981; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">${AppIcons.gift} ${t('qualifiedGiftMsg')} (${liveQuest.goodQuizzes} ⭐)</span>`;
         } else {
-          elements.quizGiftStatusText.innerHTML = `<span style="color: #f43f5e; display: inline-flex; align-items: center; gap: 4px;">${AppIcons.x} ${t('notQualifiedGiftMsg')} (${combinedPercent}% < ${GIFT_QUIZ_THRESHOLD_PERCENT}%)</span>`;
+          elements.quizGiftStatusText.innerHTML = `<span style="color: #d97706; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">${AppIcons.star} ${t('notQualifiedGiftMsg', { n: liveQuest.stepProgress })}</span>`;
         }
       } else {
         elements.quizGiftStatusText.textContent = t('enterScoresPrompt');
       }
     }
+
+    updateGradeMonthComparison(activeStudent, targetMonthKey, combinedPercent, enteredCount > 0);
 
     // Auto-update Overall Score display and hidden input from quiz calculation
     const overallScoreDisplay = document.getElementById('overall-score-display');
@@ -1759,7 +2147,7 @@
     if (overallScoreValue) {
       if (totalMax > 0) {
         overallScoreValue.textContent = `${combinedPercent}%`;
-        overallScoreValue.style.color = combinedPercent >= 75 ? 'var(--success, #10b981)' : combinedPercent >= 50 ? 'var(--warning, #f59e0b)' : 'var(--danger, #f43f5e)';
+        overallScoreValue.style.color = isGoodQuizPercent(combinedPercent) ? 'var(--success, #10b981)' : combinedPercent >= 50 ? 'var(--warning, #f59e0b)' : 'var(--danger, #f43f5e)';
       } else {
         overallScoreValue.textContent = '—';
         overallScoreValue.style.color = '';
@@ -1769,7 +2157,7 @@
       overallScoreDisplay.classList.toggle('has-value', totalMax > 0);
     }
 
-    return { totalScore, totalMax, combinedPercent, quizzes };
+    return { totalScore, totalMax, combinedPercent, quizzes, goodThisMonth };
   }
 
   function openGradeEntryModal(studentId) {
@@ -1784,6 +2172,8 @@
 
     elements.gradeStudentId.value = student.id;
     elements.gradeModalStudentName.textContent = `${(state.lang === 'ar' ? 'الطالب' : 'Student')}: ${student.name} (${student.studentCode || 'STU'})`;
+
+    populateMonthSelectors(student);
     elements.gradeMonthSelect.value = state.selectedMonth;
 
     loadExistingGradeIntoForm(student, state.selectedMonth);
@@ -1836,13 +2226,15 @@
     const attendance = elements.gradeAttendanceStatus.value;
     const remarks = elements.gradeCommentInput.value.trim();
 
+    const student = state.students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const wasUnlocked = evaluateGiftQuest(student).hasGift;
+
     const { totalScore, totalMax, combinedPercent, quizzes } = recalculateCombinedQuizzes();
 
     // Overall score is always the combined quiz percentage (auto-calculated)
     const overallScore = combinedPercent;
-
-    const student = state.students.find(s => s.id === studentId);
-    if (!student) return;
 
     if (!student.records) student.records = {};
 
@@ -1857,16 +2249,19 @@
       remarks: remarks
     };
 
-    // Make the month that was just graded active so highlights update in real-time
-    state.selectedMonth = monthKey;
-    if (elements.monthSelect) elements.monthSelect.value = monthKey;
+    const nowUnlocked = evaluateGiftQuest(student).hasGift;
 
     saveData();
     syncStudentToApi(student);
     closeModal(elements.modalGradeEntry);
     showToast('toastGradeSaved', 'success');
-    renderHighlights();
-    renderStudents();
+
+    // Switch active view to the graded month so the saved month & comparisons update immediately
+    setSelectedMonth(monthKey);
+
+    if (!wasUnlocked && nowUnlocked) {
+      triggerCelebration();
+    }
   }
 
   // =========================================================================
@@ -1907,10 +2302,36 @@
       openGradeEntryModal(student.id);
     };
 
+    // Render 10-Step Gamified Gift Quest Board inside Student Profile
+    const isAr = (state.lang === 'ar');
+    const overallQuest = evaluateGiftQuest(student, state.selectedMonth);
+    if (elements.detailGiftQuestBoard) {
+      const questTitle = isAr
+        ? 'سباق الجوائز (10 اختبارات متميزة > 70%)'
+        : 'Gift Quest Progress (10 Good Quizzes > 70%)';
+      const questStatusMsg = overallQuest.hasGift
+        ? (isAr ? `🎁 مبروك! تم فتح الهدية (${overallQuest.goodQuizzes} اختبار متميز)` : `🎁 Gift Unlocked! (${overallQuest.goodQuizzes} good quizzes)`)
+        : (isAr ? `باقي ${overallQuest.remaining} اختبارات متميزة لفتح الهدية!` : `${overallQuest.remaining} more good quizzes to unlock your gift!`);
+
+      elements.detailGiftQuestBoard.innerHTML = `
+        <div class="detail-quest-header">
+          <div class="detail-quest-title">${AppIcons.gift} <span>${questTitle}</span></div>
+          <span class="gift-quest-tier ${overallQuest.tier}">${overallQuest.stepProgress} / ${GIFT_REQUIRED_GOOD_QUIZZES} ⭐</span>
+        </div>
+        ${renderQuestStepsHtml(overallQuest.goodQuizzes)}
+        <div class="quest-bar-track" style="margin-top: 10px;">
+          <div class="quest-bar-fill ${overallQuest.hasGift ? 'unlocked' : ''}" style="width: ${overallQuest.progressPercent}%;"></div>
+        </div>
+        <div class="quest-progress-meta" style="margin-top: 6px;">
+          <span>${questStatusMsg}</span>
+          <span class="quest-progress-count">${overallQuest.progressPercent}%</span>
+        </div>
+      `;
+    }
+
     // Render month-by-month history (oldest to newest)
     const monthsToShow = [...AVAILABLE_MONTHS].reverse();
     let historyHtml = '';
-    let giftsCount = 0;
 
     monthsToShow.forEach(m => {
       const rec = student.records ? student.records[m.key] : null;
@@ -1918,8 +2339,10 @@
       const monthTitle = (state.lang === 'ar') ? m.labelAr.split(' ')[0] : m.labelEn.split(' ')[0];
 
       if (rec) {
-        const qualifies = rec.quizPercent >= GIFT_QUIZ_THRESHOLD_PERCENT;
-        if (qualifies) giftsCount++;
+        const quizzesArr = (Array.isArray(rec.quizzes) && rec.quizzes.length > 0)
+          ? rec.quizzes
+          : (rec.quizMax > 0 ? [{ title: 'Quiz', score: rec.quizScore, maxScore: rec.quizMax }] : []);
+        const monthGoodCount = quizzesArr.filter(q => q.maxScore > 0 && isGoodQuizPercent((q.score / q.maxScore) * 100)).length;
 
         let statsRowsHtml = '';
         if (state.isAdmin) {
@@ -1927,7 +2350,11 @@
           if (rec.quizzes && rec.quizzes.length > 1) {
             quizBreakdownHtml = `
               <div class="quiz-breakdown-tags">
-                ${rec.quizzes.map(q => `<span class="quiz-breakdown-tag" title="${escapeHtml(q.title)}: ${q.score}/${q.maxScore}">${escapeHtml(q.title)}: ${q.score}/${q.maxScore}</span>`).join('')}
+                ${rec.quizzes.map(q => {
+                  const pct = q.maxScore > 0 ? (q.score / q.maxScore) * 100 : 0;
+                  const starMark = isGoodQuizPercent(pct) ? ' ⭐' : '';
+                  return `<span class="quiz-breakdown-tag" title="${escapeHtml(q.title)}: ${q.score}/${q.maxScore}">${escapeHtml(q.title)}: ${q.score}/${q.maxScore}${starMark}</span>`;
+                }).join('')}
               </div>
             `;
           }
@@ -1956,7 +2383,7 @@
           <div class="history-card ${isCurrent ? 'current' : ''}">
             <div class="history-month-title">
               <span>${monthTitle}</span>
-              ${qualifies ? `<span>${AppIcons.gift} ${t('giftAwardBadge')}</span>` : ''}
+              <span>${AppIcons.star} ${monthGoodCount}/${quizzesArr.length}</span>
             </div>
             ${statsRowsHtml}
             <div class="history-stat-row">
@@ -1989,13 +2416,13 @@
       ? `
         <p><strong>ملخص المسار لشهر ${activeMonthName}:</strong> ${trajSummaryLabel}</p>
         <p style="margin-top: 4px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
-          إجمالي جوائز التميز المحرزة: <strong>${giftsCount}</strong> <span style="color: #fbbf24;">${AppIcons.gift}</span>
+          الاختبارات المتميزة (&gt;70%): <strong>${overallQuest.goodQuizzes} / ${GIFT_REQUIRED_GOOD_QUIZZES}</strong> <span style="color: #fbbf24;">${AppIcons.gift}</span>
         </p>
       `
       : `
         <p><strong>Trajectory Summary for ${activeMonthName}:</strong> ${trajSummaryLabel}</p>
         <p style="margin-top: 4px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
-          Total monthly gifts earned across terms: <strong>${giftsCount}</strong> <span style="color: #fbbf24;">${AppIcons.gift}</span>
+          Good Quizzes (&gt;70%) Earned: <strong>${overallQuest.goodQuizzes} / ${GIFT_REQUIRED_GOOD_QUIZZES}</strong> <span style="color: #fbbf24;">${AppIcons.gift}</span>
         </p>
       `;
 
@@ -2066,23 +2493,75 @@
   // =========================================================================
   // EVENT LISTENERS & SETUP
   // =========================================================================
-  function populateMonthSelectors() {
-    const optionsHtml = AVAILABLE_MONTHS.map(m => {
-      const label = (state.lang === 'ar') ? m.labelAr : m.labelEn;
+  function populateMonthSelectors(activeStudent = null) {
+    syncAvailableMonths(state.students);
+    const currCalKey = getCurrentCalendarMonthKey();
+    const prevCalKey = getOffsetMonthKey(currCalKey, -1);
+
+    const buildOptions = (studentForMarks = null) => AVAILABLE_MONTHS.map(m => {
+      let label = (state.lang === 'ar') ? m.labelAr : m.labelEn;
+      if (m.key === currCalKey) {
+        label += (state.lang === 'ar') ? ' (الحالي)' : ' (Current)';
+      } else if (m.key === prevCalKey) {
+        label += (state.lang === 'ar') ? ' (السابق)' : ' (Previous)';
+      }
+      if (studentForMarks && studentForMarks.records && studentForMarks.records[m.key]) {
+        label += ` ✓ (${studentForMarks.records[m.key].overallScore}%)`;
+      }
       return `<option value="${m.key}" ${m.key === state.selectedMonth ? 'selected' : ''}>${label}</option>`;
     }).join('');
 
-    elements.monthSelect.innerHTML = optionsHtml;
-    elements.gradeMonthSelect.innerHTML = optionsHtml;
+    const generalOptions = buildOptions(null);
+    if (elements.monthSelect) elements.monthSelect.innerHTML = generalOptions;
+    if (elements.toolbarMonthSelect) elements.toolbarMonthSelect.innerHTML = generalOptions;
+    if (elements.gradeMonthSelect) {
+      const prevSelectedGradeMonth = elements.gradeMonthSelect.value || state.selectedMonth;
+      elements.gradeMonthSelect.innerHTML = buildOptions(activeStudent);
+      elements.gradeMonthSelect.value = prevSelectedGradeMonth;
+    }
   }
 
   function setupEventListeners() {
-    // Month selector change
-    elements.monthSelect.addEventListener('change', (e) => {
-      state.selectedMonth = e.target.value;
-      renderHighlights();
-      renderStudents();
-    });
+    // Month selector changes (Sidebar + Toolbar + Quick Current/Previous buttons)
+    if (elements.monthSelect) {
+      elements.monthSelect.addEventListener('change', (e) => {
+        setSelectedMonth(e.target.value);
+      });
+    }
+    if (elements.toolbarMonthSelect) {
+      elements.toolbarMonthSelect.addEventListener('change', (e) => {
+        setSelectedMonth(e.target.value);
+      });
+    }
+    if (elements.btnFilterCurrMonth) {
+      elements.btnFilterCurrMonth.addEventListener('click', () => {
+        setSelectedMonth(getCurrentCalendarMonthKey());
+      });
+    }
+    if (elements.btnFilterPrevMonth) {
+      elements.btnFilterPrevMonth.addEventListener('click', () => {
+        setSelectedMonth(getOffsetMonthKey(getCurrentCalendarMonthKey(), -1));
+      });
+    }
+
+    // Clickable Gift Quest items open student's quest board modal
+    if (elements.giftQualifiedList) {
+      elements.giftQualifiedList.addEventListener('click', (e) => {
+        const card = e.target.closest('.gift-quest-item');
+        if (card && card.dataset.studentId) {
+          openStudentDetailModal(card.dataset.studentId);
+        }
+      });
+      elements.giftQualifiedList.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          const card = e.target.closest('.gift-quest-item');
+          if (card && card.dataset.studentId) {
+            e.preventDefault();
+            openStudentDetailModal(card.dataset.studentId);
+          }
+        }
+      });
+    }
 
     elements.gradeMonthSelect.addEventListener('change', (e) => {
       const studentId = elements.gradeStudentId.value;
