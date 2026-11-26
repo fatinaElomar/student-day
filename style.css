@@ -812,13 +812,15 @@ body.light-theme .app-header {
 
 .quest-steps-track {
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
+  grid-template-columns: repeat(10, minmax(0, 1fr));
   gap: 3px;
   flex: 1;
+  min-width: 0;
 }
 
 .quest-step-dot {
   height: 24px;
+  min-width: 0;
   border-radius: 6px;
   background: #e2e8f0;
   color: #94a3b8;
@@ -1681,7 +1683,7 @@ body.light-theme .view-btn.active {
    =================================================================== */
 .students-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
   gap: 20px;
 }
 
@@ -2363,10 +2365,16 @@ body.light-theme .inner-quiz-card {
 
 .quiz-col-input-name {
   flex: 2;
-  min-width: 0;
+  min-width: 140px;
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.quiz-name-input {
+  flex: 1;
+  min-width: 90px;
+  width: 100%;
 }
 
 .quiz-subject-badge {
@@ -3753,5 +3761,264 @@ body.arabic-mode {
 @media (max-width: 560px) {
   .behavior-type-toggle {
     grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================================
+   COMPREHENSIVE MOBILE RESPONSIVE LAYOUT (DASHBOARD, CARDS, QUIZ INPUTS)
+   ========================================================================= */
+@media (max-width: 768px) {
+  html[dir="rtl"] .header-container,
+  .header-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  html[dir="rtl"] .header-controls,
+  .header-controls {
+    width: 100%;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .search-box {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .toolbar-month-row {
+    gap: 8px;
+  }
+
+  .toolbar-month-select-wrap {
+    width: 100%;
+  }
+
+  .toolbar-month-select-wrap .custom-select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 14px;
+  }
+
+  .main-content {
+    padding-top: 18px;
+    padding-bottom: 40px;
+  }
+
+  .students-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  /* Quiz Entry Modal: 2-line responsive row so quiz name input is ALWAYS full-width & visible */
+  .quiz-rows-header {
+    display: none;
+  }
+
+  .quiz-rows-list {
+    max-height: 290px;
+    gap: 8px;
+  }
+
+  .quiz-item-row {
+    flex-wrap: wrap;
+    padding: 10px;
+    gap: 8px 6px;
+  }
+
+  .quiz-col-input-name {
+    order: 1;
+    flex: 1 1 calc(100% - 36px);
+    min-width: 0;
+    width: calc(100% - 36px);
+  }
+
+  .quiz-name-input {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    font-size: 0.9rem;
+    padding: 8px 10px;
+  }
+
+  .quiz-col-action {
+    order: 2;
+    margin-inline-start: auto;
+    flex-shrink: 0;
+  }
+
+  .quiz-col-input-score,
+  .quiz-col-input-max {
+    order: 3;
+    flex: 1 1 72px;
+    width: auto;
+    min-width: 68px;
+  }
+
+  .quiz-slash {
+    order: 3;
+  }
+
+  .quiz-col-input-pct {
+    order: 3;
+    width: auto;
+    min-width: 64px;
+    margin-inline-start: auto;
+  }
+
+  .quiz-cumulative-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .summary-stat-box {
+    min-width: 0;
+  }
+
+  .summary-stat-box.flex-2 {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+
+  /* Modals fit small screens cleanly */
+  .modal-backdrop {
+    padding: 8px;
+  }
+
+  .modal {
+    padding: 16px;
+    max-height: 92vh;
+  }
+
+  .modal-title {
+    font-size: 1.1rem;
+  }
+
+  .modal-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  [dir="rtl"] .modal-actions {
+    flex-direction: row-reverse;
+    flex-wrap: wrap;
+  }
+
+  .modal-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .brand-title {
+    font-size: 1.25rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.74rem;
+  }
+
+  .active-month-pill {
+    width: 100%;
+    flex-wrap: wrap;
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+
+  .spotlight-card,
+  .reward-card,
+  .momentum-card,
+  .student-card,
+  .toolbar-section,
+  .system-legend {
+    padding: 16px;
+  }
+
+  .winner-avatar {
+    width: 144px;
+    height: 144px;
+  }
+
+  .spotlight-footer {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .gift-quest-top {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .quest-steps-track {
+    gap: 2px;
+  }
+
+  .quest-step-dot {
+    height: 22px;
+    border-radius: 5px;
+  }
+
+  .quest-step-dot .svg-icon.xs {
+    width: 11px;
+    height: 11px;
+  }
+
+  .momentum-stats-row {
+    gap: 6px;
+  }
+
+  .momentum-stat-item {
+    padding: 10px 6px;
+  }
+
+  .stat-number {
+    font-size: 1.25rem;
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+  }
+
+  .student-card-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .admin-btn-group {
+    flex-wrap: wrap;
+  }
+
+  .detail-history-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .student-detail-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .toast-container,
+  [dir="rtl"] .toast-container {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .toast {
+    min-width: 0;
+    width: 100%;
   }
 }
