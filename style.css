@@ -708,6 +708,7 @@ body.light-theme .app-header {
   border-radius: var(--radius-full);
   font-size: 0.75rem;
   font-weight: 700;
+  text-align: center;
 }
 
 .gift-qualified-list {
