@@ -1215,12 +1215,11 @@
       </div>
       <div class="quest-avg-row">
         <div class="quest-avg-header">
-          <span>${isAr ? 'معدل المسابقات (الهدف 70%):' : 'Combined Quiz Avg (Goal 70%):'}</span>
-          <span class="quest-avg-pill ${quest.avgMet ? 'met' : 'below'}">${quest.totalQuizzes > 0 ? `${quest.combinedAvg}%` : '0%'} / ${GIFT_MIN_AVG_PERCENT}%</span>
+          <span>${isAr ? 'تقدم المسابقات:' : 'Quizzes Progress:'} <strong>${quest.points} / ${GIFT_REQUIRED_QUIZZES} (${quest.quizProgressPercent}%)</strong></span>
+          <span class="quest-avg-pill ${quest.avgMet ? 'met' : 'below'}">${isAr ? 'المعدل' : 'Avg'}: ${quest.combinedAvg}%</span>
         </div>
-        <div class="quest-bar-track" title="${quest.combinedAvg}% / 70%">
-          <div class="quest-bar-fill ${barFillClass}" style="width: ${quest.avgBarPercent}%;"></div>
-          <span class="quest-target-marker" title="70% Goal"></span>
+        <div class="quest-bar-track" title="${quest.points} / ${GIFT_REQUIRED_QUIZZES} (${quest.quizProgressPercent}%)">
+          <div class="quest-bar-fill ${barFillClass}" style="width: ${quest.quizProgressPercent}%;"></div>
         </div>
       </div>
     `;
@@ -1630,12 +1629,11 @@
       const cardQuestBarHtml = quest.eligibleToShow ? `
         <div class="card-gift-game-box ${quest.hasGift ? 'is-unlocked' : ''}">
           <div class="quest-avg-header">
-            <span>${state.lang === 'ar' ? 'نقاط الجائزة' : 'Gift Points'}: <strong>${quest.points}/${GIFT_REQUIRED_QUIZZES}</strong></span>
-            <span class="quest-avg-pill ${quest.avgMet ? 'met' : 'below'}">${quest.combinedAvg}% / 70%</span>
+            <span>${state.lang === 'ar' ? 'نقاط الجائزة' : 'Gift Points'}: <strong>${quest.points}/${GIFT_REQUIRED_QUIZZES} (${quest.quizProgressPercent}%)</strong></span>
+            <span class="quest-avg-pill ${quest.avgMet ? 'met' : 'below'}">${state.lang === 'ar' ? 'المعدل' : 'Avg'}: ${quest.combinedAvg}%</span>
           </div>
-          <div class="quest-bar-track">
-            <div class="quest-bar-fill ${quest.hasGift ? 'unlocked' : (quest.avgMet ? 'avg-met' : '')}" style="width: ${quest.avgBarPercent}%;"></div>
-            <span class="quest-target-marker"></span>
+          <div class="quest-bar-track" title="${quest.points}/${GIFT_REQUIRED_QUIZZES} (${quest.quizProgressPercent}%)">
+            <div class="quest-bar-fill ${quest.hasGift ? 'unlocked' : (quest.avgMet ? 'avg-met' : '')}" style="width: ${quest.quizProgressPercent}%;"></div>
           </div>
           <div style="font-size: 0.72rem; color: var(--text-secondary);">${buildQuestRemainingText(quest)}</div>
         </div>

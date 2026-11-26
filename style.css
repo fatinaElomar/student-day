@@ -883,7 +883,7 @@ body.light-theme .app-header {
   width: 100%;
   background: #e2e8f0;
   border-radius: var(--radius-full);
-  overflow: visible;
+  overflow: hidden;
 }
 
 .quest-bar-fill {
