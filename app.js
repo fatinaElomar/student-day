@@ -1828,12 +1828,6 @@
         let tierText = '';
         if (quest.hasGift) {
           tierText = isAr ? '🎁 سيحصل على جائزة!' : '🎁 Will Get Gift!';
-        } else if (quest.hasCompleted10 && !quest.avgMet) {
-          tierText = isAr ? `🎯 متبقي +${quest.avgRemaining}%` : `🎯 Needs +${quest.avgRemaining}%`;
-        } else if (quest.points >= 7) {
-          tierText = isAr ? `🔥 متبقي ${quest.quizzesRemaining} فقط!` : `🔥 ${quest.quizzesRemaining} left!`;
-        } else {
-          tierText = isAr ? `🚀 متبقي ${quest.quizzesRemaining}` : `🚀 ${quest.quizzesRemaining} left`;
         }
 
         return `
@@ -1846,7 +1840,7 @@
                 </div>
                 <span class="gift-student-name">${escapeHtml(student.name)}</span>
               </div>
-              <span class="gift-quest-tier ${quest.tier}">${tierText}</span>
+              ${tierText ? `<span class="gift-quest-tier ${quest.tier}">${tierText}</span>` : ''}
             </div>
 
             ${renderQuestStepsHtml(quest, student.id)}
