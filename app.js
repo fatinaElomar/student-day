@@ -22,11 +22,23 @@
   const ROLE_STORAGE_KEY = 'edutrack_admin_session';
   const LANG_STORAGE_KEY = 'edutrack_lang_pref';
   const ADMIN_PASSCODE = 'admin123';
-  const GIFT_REQUIRED_QUIZZES = 10; // Must complete 10 quizzes
+  const GIFT_REQUIRED_QUIZZES = 10; // Must complete 10 points
   const GIFT_MIN_AVG_PERCENT = 70.0; // Combined final average across quizzes must be >= 70%
+  const GIFT_CANCEL_BELOW_PERCENT = 50.0; // Score < 50% permanently cancels 1 earned point
+  const MINI_QUIZ_MAX_THRESHOLD = 10; // Quizzes with maxScore < 10 are mini-quizzes
+  const MINI_QUIZZES_PER_POINT = 5; // Every 5 good mini-quizzes count as 1 full point
 
   function isAvgEligiblePercent(pct) {
     return Number(pct) >= GIFT_MIN_AVG_PERCENT;
+  }
+
+  function isBadCancelPercent(pct) {
+    return Number(pct) < GIFT_CANCEL_BELOW_PERCENT;
+  }
+
+  function isMiniQuizMax(maxScore) {
+    const m = Number(maxScore) || 0;
+    return m > 0 && m < MINI_QUIZ_MAX_THRESHOLD;
   }
 
   // =========================================================================
@@ -173,7 +185,8 @@
     history: '<svg class="svg-icon xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
     grade: '<svg class="svg-icon xs" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>',
     edit: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>',
-    trash: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>'
+    trash: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>',
+    snowflake: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20m-4.93-7.07L12 10 6.93 4.93m10.14 14.14L12 14l-5.07 5.07M4.93 17.07 10 12 4.93 6.93m14.14 10.14L14 12l5.07-5.07"/></svg>'
   };
 
   const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -269,7 +282,7 @@
       goodQuizMinHint: '(Combined Avg ≥ 70%)',
       goodQuizzesMonthLabel: 'Quizzes Count',
       qualifiedCount: '{n} Unlocked',
-      giftRewardNote: 'Only students with ≥ 1 net point and ≥ 70% average appear; a quiz < 70% cancels 1 previous point. Reach 10 points to win!',
+      giftRewardNote: 'Only students with ≥ 1 net point and ≥ 70% average appear; scores < 50% cancel 1 point permanently. Mini-quizzes (< 10) count 5 = 1 point. Paused points show reason on hover/click.',
       noGiftWinners: 'No students qualify yet — requires ≥ 1 good quiz and ≥ 70% average to appear!',
       classMomentum: 'Class Momentum',
       classMomentumDesc: 'Trajectory vs. Previous Month',
@@ -305,7 +318,7 @@
       resetFilters: 'Reset Filters',
       rulesTitle: 'System Rules & Performance Criteria',
       giftAwardBadge: 'Gift Award',
-      giftRuleDesc: 'Only students with ≥ 1 good quiz (≥ 70%) appear; each quiz < 70% cancels 1 previous point. Reach 10 points & ≥ 70% avg to win.',
+      giftRuleDesc: 'Only ≥ 70% earns a point (mini-quizzes < 10 count 5 = 1 pt); < 50% cancels 1 point permanently. Admin may pause (freeze) or cancel points for behavior. Win at 10 active points & ≥ 70% avg.',
       forwardRuleDesc: 'Student is progressing! Monthly score increased compared to the previous month.',
       backwardRuleDesc: 'Regression alert! Monthly score dropped from the previous month. Requires teacher guidance.',
       stagnantRuleDesc: 'Student is inactive, showed 0 progress, or grades consistently below minimum passing standards.',
@@ -400,6 +413,24 @@
       toastPhotoRemoved: 'Photo removed.',
       toastCelebrating: 'Celebrating Student of the Month & Gift Winners!',
       toastExportSuccess: 'Student grade records exported successfully!',
+      manageBehaviorBtn: 'Behavior / Freeze Point',
+      behaviorModalTitle: 'Behavior & Point Control',
+      behaviorActionTypeLabel: 'Action Type *',
+      actionFreezeTitle: '❄️ Freeze Point (Paused)',
+      actionFreezeDesc: 'Point stays visible in trail as paused; does not count until unfrozen.',
+      actionCancelTitle: '🚫 Cancel Point Permanently',
+      actionCancelDesc: 'Removes 1 earned point permanently due to behavior.',
+      behaviorReasonLabel: 'Reason (shown on hover & click) *',
+      behaviorReasonPlaceholder: 'e.g. Classroom disruption / misbehavior',
+      applyBehaviorActionBtn: 'Apply Action',
+      behaviorHistoryTitle: 'Frozen & Behavior-Cancelled Points',
+      frozenPointTitle: 'Paused / Frozen Point',
+      unfreezeBtn: 'Unfreeze Point',
+      removeActionBtn: 'Remove',
+      toastPointFrozen: 'Point frozen with behavior reason.',
+      toastPointCancelled: 'Point permanently cancelled due to behavior.',
+      toastPointUnfrozen: 'Point unfrozen and active again!',
+      toastBehaviorRemoved: 'Behavior action removed.',
       toastTableAdminOnly: 'Table view is only accessible to Admin.',
       toastAdminReqGrade: 'Admin privileges required'
     },
@@ -437,7 +468,7 @@
       goodQuizMinHint: '(بمعدل نهائي 70% أو فوق)',
       goodQuizzesMonthLabel: 'عدد المسابقات',
       qualifiedCount: '{n} فائز',
-      giftRewardNote: 'يظهر فقط من لديه نقطة جيدة على الأقل ومعدل 70% أو فوق — كل علامة تحت 70% تلغي نقطة قبلها، والهدف 10 نقاط!',
+      giftRewardNote: 'يظهر فقط من لديه نقطة واحدة على الأقل ومعدل 70% أو فوق — العلامة تحت 50% تلغي نقطة نهائياً، وكل 5 اختبارات صغيرة (< 10) تحسب كنقطة، والنقطة الموقفة يظهر سببها عند التمرير أو الضغط.',
       noGiftWinners: 'لا يوجد طلاب مستحقون حالياً — يتطلب علامة جيدة واحدة على الأقل ومعدل 70% أو فوق للظهور هنا!',
       classMomentum: 'مؤشر تقدم الفصل',
       classMomentumDesc: 'المسار مقارنة بالشهر السابق',
@@ -473,7 +504,7 @@
       resetFilters: 'إعادة تعيين الفلاتر',
       rulesTitle: 'قواعد النظام ومعايير الأداء الأكاديمي',
       giftAwardBadge: 'جائزة التميز',
-      giftRuleDesc: 'يظهر فقط من لديه علامة جيدة (≥70%) على الأقل؛ وكل علامة سيئة (<70%) تلغي نقطة قبلها. الفوز عند 10 نقاط ومعدل ≥70%.',
+      giftRuleDesc: 'العلامة ≥70% تمنح نقطة (كل 5 اختبارات صغيرة <10 تحسب كنقطة)، وتحت 50% تلغي نقطة نهائياً. يمكن للمسؤول تجميد أو إلغاء نقطة للسلوك، والفوز عند 10 نقاط فعالة ومعدل ≥70%.',
       forwardRuleDesc: 'الطالب في مسار تصاعدي! ارتفعت درجاته مقارنة بالشهر السابق.',
       backwardRuleDesc: 'تنبيه تراجع! انخفضت الدرجة عن الشهر السابق، يحتاج إلى دعم وإرشاد.',
       stagnantRuleDesc: 'الطالب غير نشط، لم يحرز تقدماً، أو درجاته دون مستوى النجاح.',
@@ -569,7 +600,25 @@
       toastCelebrating: 'نحتفل بطالب الشهر والفائزين بجوائز التميز!',
       toastExportSuccess: 'تم تصدير سجلات درجات الطلاب بنجاح!',
       toastTableAdminOnly: 'عرض الجدول متاح للمسؤول فقط.',
-      toastAdminReqGrade: 'يتطلب هذا الإجراء صلاحيات المسؤول'
+      toastAdminReqGrade: 'يتطلب هذا الإجراء صلاحيات المسؤول',
+      manageBehaviorBtn: 'إدارة السلوك / تجميد نقطة',
+      behaviorModalTitle: 'إدارة السلوك والنقاط',
+      behaviorActionTypeLabel: 'نوع الإجراء *',
+      actionFreezeTitle: '❄️ تجميد نقطة (موقفة)',
+      actionFreezeDesc: 'تبقى النقطة ظاهرة في المسار كموقفة ولا تُحتسب حتى يتم فك التجميد.',
+      actionCancelTitle: '🚫 إلغاء نقطة نهائياً',
+      actionCancelDesc: 'حذف نقطة مكتسبة نهائياً بسبب السلوك أو المشاغبة.',
+      behaviorReasonLabel: 'السبب (يظهر عند التمرير والضغط) *',
+      behaviorReasonPlaceholder: 'مثال: مشاغبة في الحصة أو مخالفة السلوك',
+      applyBehaviorActionBtn: 'تنفيذ الإجراء',
+      behaviorHistoryTitle: 'النقاط المجمدة والملغاة سلوكياً',
+      frozenPointTitle: 'نقطة مجمدة (موقفة)',
+      unfreezeBtn: 'فك التجميد',
+      removeActionBtn: 'إزالة',
+      toastPointFrozen: 'تم تجميد النقطة مع حفظ السبب.',
+      toastPointCancelled: 'تم إلغاء النقطة نهائياً بسبب السلوك.',
+      toastPointUnfrozen: 'تم فك تجميد النقطة وعادت فعالة!',
+      toastBehaviorRemoved: 'تمت إزالة إجراء السلوك.'
     }
   };
 
@@ -742,6 +791,21 @@
     deleteStudentName: document.getElementById('delete-student-name'),
     deleteConfirmPromptMsg: document.getElementById('delete-confirm-prompt-msg'),
     btnConfirmDelete: document.getElementById('btn-confirm-delete'),
+
+    btnDetailBehavior: document.getElementById('btn-detail-behavior'),
+    modalBehaviorAction: document.getElementById('modal-behavior-action'),
+    behaviorActionForm: document.getElementById('behavior-action-form'),
+    behaviorStudentId: document.getElementById('behavior-student-id'),
+    behaviorTargetIndex: document.getElementById('behavior-target-index'),
+    behaviorModalStudentName: document.getElementById('behavior-modal-student-name'),
+    behaviorPointsSummary: document.getElementById('behavior-points-summary'),
+    behaviorQuickReasons: document.getElementById('behavior-quick-reasons'),
+    behaviorReasonInput: document.getElementById('behavior-reason-input'),
+    behaviorExistingList: document.getElementById('behavior-existing-list'),
+
+    modalFreezeReason: document.getElementById('modal-freeze-reason'),
+    freezeReasonBody: document.getElementById('freeze-reason-body'),
+    freezeReasonActions: document.getElementById('freeze-reason-actions'),
 
     // Utilities & Empty State
     btnExportData: document.getElementById('btn-export-data'),
@@ -1189,15 +1253,17 @@
       monthKeys.add(draftOverride.monthKey);
     }
 
-    let points = 0;
+    const trailPoints = [];
+    const miniGoodPool = [];
     let goodCount = 0;
     let badCount = 0;
+    let neutralCount = 0;
     let cancelledPoints = 0;
+    let miniCancelledCount = 0;
     let totalQuizzes = 0;
     let totalScoreSum = 0;
     let totalMaxSum = 0;
     let quizzesInTargetMonth = 0;
-    const earnedQuizzes = [];
 
     Array.from(monthKeys).sort().forEach(mKey => {
       if (upToMonthKey && mKey > upToMonthKey) return;
@@ -1228,32 +1294,137 @@
           quizzesInTargetMonth++;
         }
 
+        const isMini = isMiniQuizMax(maxNum);
         const quizPct = (scoreNum / maxNum) * 100;
+        const rawTitle = (q.title || 'Quiz').trim() || 'Quiz';
+
         if (isAvgEligiblePercent(quizPct)) {
-          points++;
           goodCount++;
-          const rawTitle = (q.title || 'Quiz').trim() || 'Quiz';
-          earnedQuizzes.push({
-            title: rawTitle,
-            pct: Number(quizPct.toFixed(1)),
-            monthKey: mKey,
-            subject: getQuizSubjectMeta(rawTitle)
-          });
-        } else {
-          badCount++;
-          if (points > 0) {
-            points--;
-            cancelledPoints++;
-            earnedQuizzes.pop();
+          if (isMini) {
+            miniGoodPool.push({
+              title: rawTitle,
+              pct: Number(quizPct.toFixed(1)),
+              score: scoreNum,
+              maxScore: maxNum,
+              monthKey: mKey,
+              subject: getQuizSubjectMeta(rawTitle)
+            });
+            if (miniGoodPool.length >= MINI_QUIZZES_PER_POINT) {
+              const batch = miniGoodPool.splice(0, MINI_QUIZZES_PER_POINT);
+              const batchAvg = Number((batch.reduce((acc, item) => acc + item.pct, 0) / batch.length).toFixed(1));
+              const lastSubj = batch[batch.length - 1].subject || DEFAULT_SUBJECT_META;
+              trailPoints.push({
+                kind: 'mini_bundle',
+                title: batch.map(b => `${b.title} (${b.pct}%)`).join(' • '),
+                miniQuizzes: batch,
+                pct: batchAvg,
+                monthKey: mKey,
+                subject: lastSubj,
+                isFrozen: false
+              });
+            }
+          } else {
+            trailPoints.push({
+              kind: 'regular',
+              title: rawTitle,
+              pct: Number(quizPct.toFixed(1)),
+              monthKey: mKey,
+              subject: getQuizSubjectMeta(rawTitle),
+              isFrozen: false
+            });
           }
+        } else if (isBadCancelPercent(quizPct)) {
+          badCount++;
+          if (isMini) {
+            if (miniGoodPool.length > 0) {
+              miniGoodPool.pop();
+              miniCancelledCount++;
+            } else {
+              // Unbundle the most recent mini-bundle if present (5 -> 4 mini-quizzes)
+              let bundleIdx = -1;
+              for (let idx = trailPoints.length - 1; idx >= 0; idx--) {
+                if (trailPoints[idx].kind === 'mini_bundle') {
+                  bundleIdx = idx;
+                  break;
+                }
+              }
+              if (bundleIdx !== -1) {
+                const [bundle] = trailPoints.splice(bundleIdx, 1);
+                const kept = Array.isArray(bundle.miniQuizzes) ? bundle.miniQuizzes.slice(0, MINI_QUIZZES_PER_POINT - 1) : [];
+                miniGoodPool.push(...kept);
+                miniCancelledCount++;
+              }
+            }
+          } else if (trailPoints.length > 0) {
+            trailPoints.pop();
+            cancelledPoints++;
+          }
+        } else {
+          // 50% to 69.9%: neither earns a point nor cancels an existing point
+          neutralCount++;
         }
       });
     });
 
+    // Apply Admin Behavior Actions (Freeze = paused but visible with reason; Cancel = permanently deducted)
+    const rawActions = Array.isArray(student && student.behaviorActions) ? student.behaviorActions : [];
+    const relevantActions = rawActions
+      .filter(act => !upToMonthKey || !act.monthKey || act.monthKey <= upToMonthKey)
+      .slice()
+      .sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+
+    let behaviorCancelledCount = 0;
+    const behaviorCancelledList = [];
+
+    relevantActions.forEach(act => {
+      if (!act || !act.action) return;
+      if (act.action === 'cancel') {
+        let idx = -1;
+        if (typeof act.targetIndex === 'number' && trailPoints[act.targetIndex] && !trailPoints[act.targetIndex].isFrozen) {
+          idx = act.targetIndex;
+        } else {
+          for (let k = trailPoints.length - 1; k >= 0; k--) {
+            if (!trailPoints[k].isFrozen) {
+              idx = k;
+              break;
+            }
+          }
+        }
+        if (idx === -1 && trailPoints.length > 0) idx = trailPoints.length - 1;
+        if (idx !== -1) {
+          const [removedPt] = trailPoints.splice(idx, 1);
+          behaviorCancelledCount++;
+          behaviorCancelledList.push({ ...act, removedTitle: removedPt ? removedPt.title : '' });
+        }
+      } else if (act.action === 'freeze') {
+        let idx = -1;
+        if (typeof act.targetIndex === 'number' && trailPoints[act.targetIndex] && !trailPoints[act.targetIndex].isFrozen) {
+          idx = act.targetIndex;
+        } else {
+          for (let k = trailPoints.length - 1; k >= 0; k--) {
+            if (!trailPoints[k].isFrozen) {
+              idx = k;
+              break;
+            }
+          }
+        }
+        if (idx !== -1) {
+          trailPoints[idx].isFrozen = true;
+          trailPoints[idx].freezeReason = act.reason || '';
+          trailPoints[idx].freezeId = act.id;
+          trailPoints[idx].freezeDate = act.createdAt || '';
+        }
+      }
+    });
+
+    const frozenCount = trailPoints.filter(p => p.isFrozen).length;
+    const points = trailPoints.filter(p => !p.isFrozen).length;
+    const miniBufferCount = miniGoodPool.length;
+
     const combinedAvg = totalMaxSum > 0 ? Number(((totalScoreSum / totalMaxSum) * 100).toFixed(1)) : 0;
     const hasCompleted10 = points >= GIFT_REQUIRED_QUIZZES;
     const avgMet = totalQuizzes > 0 && isAvgEligiblePercent(combinedAvg);
-    const eligibleToShow = points >= 1 && avgMet; // Must have >= 1 net point AND combined avg >= 70% to appear
+    const eligibleToShow = (points >= 1 || frozenCount >= 1) && avgMet;
     const hasGift = hasCompleted10 && avgMet;
 
     const stepProgress = Math.min(GIFT_REQUIRED_QUIZZES, points);
@@ -1270,8 +1441,15 @@
 
     return {
       points,
+      frozenCount,
+      behaviorCancelledCount,
+      behaviorCancelledList,
+      miniBufferCount,
+      miniGoodPool,
+      miniCancelledCount,
       goodCount,
       badCount,
+      neutralCount,
       cancelledPoints,
       eligibleToShow,
       totalQuizzes,
@@ -1286,77 +1464,146 @@
       quizProgressPercent,
       avgBarPercent,
       tier,
-      earnedQuizzes
+      trailPoints,
+      earnedQuizzes: trailPoints.filter(p => !p.isFrozen)
     };
   }
 
   function buildQuestRemainingText(quest) {
     const isAr = (state.lang === 'ar');
     if (quest.points === 0) {
-      if (quest.cancelledPoints > 0) {
+      if (quest.frozenCount > 0) {
         return isAr
-          ? `⚠️ ألغت علامة سيئة (<70%) النقطة السابقة — حقق ≥70% للعودة!`
-          : `⚠️ A score <70% cancelled the point — get ≥70% to re-enter!`;
+          ? `❄️ لدى الطالب ${quest.frozenCount} نقطة موقفة — اضغط عليها لمعرفة السبب`
+          : `❄️ ${quest.frozenCount} paused point(s) — click dot to view reason`;
+      }
+      if (quest.cancelledPoints > 0 || quest.behaviorCancelledCount > 0) {
+        return isAr
+          ? `⚠️ أُلغيت النقطة السابقة (علامة <50% أو سلوك) — حقق ≥70% لإضافة نقطة جديدة!`
+          : `⚠️ Previous point was cancelled (<50% score or behavior) — get ≥70% to replace it!`;
       }
       return isAr
         ? '🎮 يتطلب علامة جيدة واحدة (≥70%) على الأقل للظهور'
         : '🎮 Needs at least 1 good quiz (≥70%) to qualify';
     }
-    const cancelNote = quest.cancelledPoints > 0
-      ? (isAr ? ` • (أُلغيت ${quest.cancelledPoints})` : ` • (${quest.cancelledPoints} cancelled)`)
-      : '';
+    const notes = [];
+    if (quest.cancelledPoints > 0) {
+      notes.push(isAr ? `أُلغيت ${quest.cancelledPoints} (<50%)` : `${quest.cancelledPoints} cancelled (<50%)`);
+    }
+    if (quest.behaviorCancelledCount > 0) {
+      notes.push(isAr ? `ملغاة سلوكياً ${quest.behaviorCancelledCount}` : `${quest.behaviorCancelledCount} behavior-cancelled`);
+    }
+    if (quest.frozenCount > 0) {
+      notes.push(isAr ? `${quest.frozenCount} موقفة` : `${quest.frozenCount} paused`);
+    }
+    if (quest.miniBufferCount > 0) {
+      notes.push(isAr ? `${quest.miniBufferCount}/5 صغار` : `${quest.miniBufferCount}/5 mini`);
+    }
+    const extraNote = notes.length > 0 ? ` • (${notes.join(' • ')})` : '';
 
     if (quest.hasGift) {
       return isAr
-        ? `🎉 مبروك! وصل إلى ${quest.points}/10 بمعدل ${quest.combinedAvg}% — سيحصل على الجائزة!`
-        : `🎉 ${quest.points}/10 points at ${quest.combinedAvg}% avg — Will Get Gift!`;
+        ? `🎉 مبروك! وصل إلى ${quest.points}/10 بمعدل ${quest.combinedAvg}% — سيحصل على الجائزة!${extraNote}`
+        : `🎉 ${quest.points}/10 points at ${quest.combinedAvg}% avg — Will Get Gift!${extraNote}`;
     }
     if (quest.hasCompleted10 && !quest.avgMet) {
       return isAr
-        ? `🎯 أتم 10/10! متبقي +${quest.avgRemaining}% ليصل المعدل إلى 70%${cancelNote}`
-        : `🎯 10/10 points! Needs +${quest.avgRemaining}% avg to reach 70%${cancelNote}`;
+        ? `🎯 أتم 10/10! متبقي +${quest.avgRemaining}% ليصل المعدل إلى 70%${extraNote}`
+        : `🎯 10/10 points! Needs +${quest.avgRemaining}% avg to reach 70%${extraNote}`;
     }
     if (quest.avgMet) {
       return isAr
-        ? `🔥 المعدل ${quest.combinedAvg}% — متبقي ${quest.quizzesRemaining} نقطة ليصل إلى 10!${cancelNote}`
-        : `🔥 Avg ${quest.combinedAvg}% ✅ — ${quest.quizzesRemaining} more point(s) to reach 10!${cancelNote}`;
+        ? `🔥 المعدل ${quest.combinedAvg}% — متبقي ${quest.quizzesRemaining} نقطة ليصل إلى 10!${extraNote}`
+        : `🔥 Avg ${quest.combinedAvg}% ✅ — ${quest.quizzesRemaining} more point(s) to reach 10!${extraNote}`;
     }
     return isAr
-      ? `⚡ متبقي ${quest.quizzesRemaining} نقطة • متبقي +${quest.avgRemaining}% ليصل إلى 70%${cancelNote}`
-      : `⚡ ${quest.quizzesRemaining} left • needs +${quest.avgRemaining}% to reach 70%${cancelNote}`;
+      ? `⚡ متبقي ${quest.quizzesRemaining} نقطة • متبقي +${quest.avgRemaining}% ليصل إلى 70%${extraNote}`
+      : `⚡ ${quest.quizzesRemaining} left • needs +${quest.avgRemaining}% to reach 70%${extraNote}`;
   }
 
-  function renderQuestStepsHtml(quest) {
-    const filled = Math.min(GIFT_REQUIRED_QUIZZES, quest.points);
+  function renderQuestStepsHtml(quest, studentId = '') {
     const isUnlocked = quest.hasGift;
-    const earnedList = Array.isArray(quest.earnedQuizzes) ? quest.earnedQuizzes : [];
+    const isAr = (state.lang === 'ar');
+    const trail = Array.isArray(quest.trailPoints) ? quest.trailPoints : (Array.isArray(quest.earnedQuizzes) ? quest.earnedQuizzes : []);
+
+    // Render all trail points (active + frozen) plus remaining open slots up to 10 active points
+    const emptyNeeded = isUnlocked ? 0 : Math.max(0, GIFT_REQUIRED_QUIZZES - quest.points);
+    const totalSlots = Math.max(GIFT_REQUIRED_QUIZZES, trail.length + emptyNeeded);
+
     let stepsHtml = '';
-    for (let i = 1; i <= GIFT_REQUIRED_QUIZZES; i++) {
-      const isEarned = i <= filled;
-      const isNext = !isUnlocked && i === filled + 1;
-      if (isEarned) {
-        const earnedQuiz = earnedList[i - 1] || null;
-        const meta = earnedQuiz ? (earnedQuiz.subject || getQuizSubjectMeta(earnedQuiz.title)) : DEFAULT_SUBJECT_META;
-        const subjectLabel = (state.lang === 'ar') ? meta.labelAr : meta.labelEn;
-        const dotTitle = earnedQuiz
-          ? `${escapeHtml(earnedQuiz.title)} (${earnedQuiz.pct}%) • ${i}/${GIFT_REQUIRED_QUIZZES}`
-          : `${subjectLabel} • ${i}/${GIFT_REQUIRED_QUIZZES}`;
-        stepsHtml += `<div class="quest-step-dot earned subject-${meta.key}" title="${dotTitle}">${meta.icon}</div>`;
+    let activeNum = 0;
+    let emptyShown = 0;
+
+    for (let idx = 0; idx < totalSlots; idx++) {
+      const pt = trail[idx] || null;
+      if (pt && pt.isFrozen) {
+        const meta = pt.subject || getQuizSubjectMeta(pt.title);
+        const reasonSafe = escapeHtml(pt.freezeReason || (isAr ? 'تجميد سلوكي' : 'Behavior pause'));
+        const dotTitle = isAr
+          ? `❄️ نقطة موقفة (${escapeHtml(pt.title)} • ${pt.pct}%) — السبب: ${reasonSafe} (اضغط للتفاصيل)`
+          : `❄️ Paused Point (${escapeHtml(pt.title)} • ${pt.pct}%) — Reason: ${reasonSafe} (Click for details)`;
+        stepsHtml += `
+          <div class="quest-step-dot frozen subject-${meta.key}"
+               data-student-id="${escapeHtml(studentId)}"
+               data-point-index="${idx}"
+               data-freeze-id="${escapeHtml(pt.freezeId || '')}"
+               role="button"
+               tabindex="0"
+               title="${dotTitle}">
+            <span class="dot-frozen-glyph">${AppIcons.snowflake}</span>
+          </div>
+        `;
+      } else if (pt) {
+        activeNum++;
+        const meta = pt.subject || getQuizSubjectMeta(pt.title);
+        const miniMark = pt.kind === 'mini_bundle' ? '<span class="dot-mini-x5">×5</span>' : '';
+        const dotTitle = pt.kind === 'mini_bundle'
+          ? `${isAr ? '5 اختبارات صغيرة' : '5 Mini-Quizzes'}: ${escapeHtml(pt.title)} (${pt.pct}%) • ${activeNum}/${GIFT_REQUIRED_QUIZZES}`
+          : `${escapeHtml(pt.title)} (${pt.pct}%) • ${activeNum}/${GIFT_REQUIRED_QUIZZES}${state.isAdmin ? (isAr ? ' • اضغط للتجميد أو الإلغاء' : ' • Click to freeze/cancel') : ''}`;
+        stepsHtml += `
+          <div class="quest-step-dot earned subject-${meta.key} ${pt.kind === 'mini_bundle' ? 'is-mini-bundle' : ''} ${state.isAdmin ? 'is-admin-dot' : ''}"
+               data-student-id="${escapeHtml(studentId)}"
+               data-point-index="${idx}"
+               title="${dotTitle}">
+            ${meta.icon}${miniMark}
+          </div>
+        `;
       } else {
+        emptyShown++;
+        const slotNumber = quest.points + emptyShown;
+        const isNext = !isUnlocked && emptyShown === 1;
         const cls = isNext ? 'next' : '';
-        stepsHtml += `<div class="quest-step-dot ${cls}" title="${i}/${GIFT_REQUIRED_QUIZZES}">${i}</div>`;
+        stepsHtml += `<div class="quest-step-dot ${cls}" title="${slotNumber}/${GIFT_REQUIRED_QUIZZES}">${slotNumber}</div>`;
       }
     }
+
     const barFillClass = isUnlocked ? 'unlocked' : (quest.avgMet ? 'avg-met' : '');
-    const isAr = (state.lang === 'ar');
+
+    // Compact status chips for frozen points, mini-quiz 5-count buffer, or behavior cancellations
+    const statusChips = [];
+    if (quest.frozenCount > 0) {
+      statusChips.push(`<span class="quest-status-chip is-frozen">${AppIcons.snowflake} ${quest.frozenCount} ${isAr ? 'نقطة موقفة (اضغط عليها للسبب)' : 'Paused (click dot for reason)'}</span>`);
+    }
+    if (quest.miniBufferCount > 0) {
+      let pips = '';
+      for (let m = 1; m <= MINI_QUIZZES_PER_POINT; m++) {
+        pips += `<span class="mini-pip ${m <= quest.miniBufferCount ? 'filled' : ''}"></span>`;
+      }
+      statusChips.push(`<span class="quest-status-chip is-mini" title="${isAr ? 'كل 5 اختبارات صغيرة (<10) = نقطة واحدة' : 'Every 5 mini-quizzes (<10) = 1 point'}">⚡ ${quest.miniBufferCount}/${MINI_QUIZZES_PER_POINT} ${isAr ? 'صغار' : 'mini'} <span class="mini-pips-wrap">${pips}</span></span>`);
+    }
+    if (quest.behaviorCancelledCount > 0) {
+      statusChips.push(`<span class="quest-status-chip is-cancelled">🚫 ${quest.behaviorCancelledCount} ${isAr ? 'ملغاة سلوكياً' : 'behavior cancelled'}</span>`);
+    }
+    const chipsHtml = statusChips.length > 0 ? `<div class="quest-status-chips">${statusChips.join('')}</div>` : '';
 
     return `
       <div class="quest-steps-row">
-        <div class="quest-steps-track">${stepsHtml}</div>
-        <div class="quest-chest-node ${isUnlocked ? 'unlocked' : ''}" title="${isUnlocked ? t('giftQualified') : `${filled}/${GIFT_REQUIRED_QUIZZES}`}">
+        <div class="quest-steps-track" style="grid-template-columns: repeat(${totalSlots}, 1fr);">${stepsHtml}</div>
+        <div class="quest-chest-node ${isUnlocked ? 'unlocked' : ''}" title="${isUnlocked ? t('giftQualified') : `${quest.points}/${GIFT_REQUIRED_QUIZZES}`}">
           ${AppIcons.gift}
         </div>
       </div>
+      ${chipsHtml}
       <div class="quest-avg-row">
         <div class="quest-avg-header">
           <span>${isAr ? 'تقدم المسابقات:' : 'Quizzes Progress:'} <strong>${quest.points} / ${GIFT_REQUIRED_QUIZZES} (${quest.quizProgressPercent}%)</strong></span>
@@ -1590,7 +1837,7 @@
               <span class="gift-quest-tier ${quest.tier}">${tierText}</span>
             </div>
 
-            ${renderQuestStepsHtml(quest)}
+            ${renderQuestStepsHtml(quest, student.id)}
           </div>
         `;
       }).join('');
@@ -1757,6 +2004,15 @@
         ? `<span class="gift-award-badge" title="${t('giftQualified')}">${AppIcons.gift} ${t('giftQualified')} (${quest.points}/${GIFT_REQUIRED_QUIZZES} • ${quest.combinedAvg}%)</span>`
         : `<span class="status-badge neutral" title="${buildQuestRemainingText(quest)}">${AppIcons.star} ${quest.stepProgress}/${GIFT_REQUIRED_QUIZZES}</span>`;
 
+      const cardExtras = [];
+      if (quest.frozenCount > 0) {
+        cardExtras.push(state.lang === 'ar' ? `❄️ ${quest.frozenCount} موقفة` : `❄️ ${quest.frozenCount} paused`);
+      }
+      if (quest.miniBufferCount > 0) {
+        cardExtras.push(state.lang === 'ar' ? `⚡ ${quest.miniBufferCount}/5 صغار` : `⚡ ${quest.miniBufferCount}/5 mini`);
+      }
+      const cardExtraText = cardExtras.length > 0 ? `<div class="card-quest-subchips">${cardExtras.join(' • ')}</div>` : '';
+
       const cardQuestBarHtml = quest.eligibleToShow ? `
         <div class="card-gift-game-box ${quest.hasGift ? 'is-unlocked' : ''}">
           <div class="quest-avg-header">
@@ -1766,6 +2022,7 @@
           <div class="quest-bar-track" title="${quest.points}/${GIFT_REQUIRED_QUIZZES} (${quest.quizProgressPercent}%)">
             <div class="quest-bar-fill ${quest.hasGift ? 'unlocked' : (quest.avgMet ? 'avg-met' : '')}" style="width: ${quest.quizProgressPercent}%;"></div>
           </div>
+          ${cardExtraText}
         </div>
       ` : '';
 
@@ -1811,6 +2068,9 @@
             <div class="admin-btn-group admin-only">
               <button class="btn btn-xs btn-outline btn-enter-grade" data-id="${student.id}" title="Enter or edit grades for this month">
                 ${AppIcons.grade} ${t('gradeBtn')}
+              </button>
+              <button class="btn btn-xs btn-outline btn-behavior-student" data-id="${student.id}" title="${t('manageBehaviorBtn')}">
+                ${AppIcons.snowflake}
               </button>
               <button class="btn btn-xs btn-outline btn-edit-student" data-id="${student.id}" title="Edit student info">
                 ${AppIcons.edit}
@@ -2185,22 +2445,26 @@
 
     let rowPct = '—';
     let pillClass = '';
+    const isMini = isMiniQuizMax(maxVal);
     if (scoreVal !== '' && maxVal > 0) {
       const pctNum = Number(((Number(scoreVal) / Number(maxVal)) * 100).toFixed(1));
       const good = isAvgEligiblePercent(pctNum);
-      rowPct = `${pctNum}%${good ? ' ⭐' : ''}`;
-      pillClass = good ? 'is-good' : 'is-low';
+      const badCancel = isBadCancelPercent(pctNum);
+      rowPct = `${pctNum}%${good ? (isMini ? ' ⅕' : ' ⭐') : (badCancel ? ' ✕' : '')}`;
+      pillClass = good ? 'is-good' : (badCancel ? 'is-low' : 'is-mid');
     }
 
     const titlePlaceholder = (state.lang === 'ar') ? 'مثال: علوم، رياضيات، عربي، كيمياء...' : 'e.g. Science, Math, Arabic, Chemistry...';
     const subjMeta = getQuizSubjectMeta(quiz.title || '');
     const subjLabel = (state.lang === 'ar') ? subjMeta.labelAr : subjMeta.labelEn;
+    const miniTitle = (state.lang === 'ar') ? 'اختبار صغير (<10): كل 5 = نقطة' : 'Mini quiz (<10): 5 = 1 point';
 
     return `
-      <div class="quiz-item-row">
+      <div class="quiz-item-row ${isMini ? 'is-mini-row' : ''}">
         <div class="quiz-col-input-name">
           <span class="quiz-subject-badge subject-${subjMeta.key}" title="${escapeHtml(subjLabel)}">${subjMeta.icon}</span>
           <input type="text" class="form-input form-input-sm quiz-name-input" list="quiz-subject-suggestions" placeholder="${titlePlaceholder}" value="${titleVal}" required>
+          <span class="quiz-mini-tag" style="${isMini ? '' : 'display:none;'}" title="${miniTitle}">1/5</span>
         </div>
         <div class="quiz-col-input-score">
           <input type="number" class="form-input form-input-sm quiz-score-input" min="0" max="1000" step="0.5" placeholder="Score" value="${scoreVal}" required>
@@ -2284,26 +2548,32 @@
 
       const scoreNum = parseFloat(scoreRaw);
       const maxNum = parseFloat(maxRaw);
+      const isMini = isMiniQuizMax(maxNum);
+      row.classList.toggle('is-mini-row', isMini);
+      const miniTagEl = row.querySelector('.quiz-mini-tag');
+      if (miniTagEl) miniTagEl.style.display = isMini ? '' : 'none';
 
       if (scoreRaw !== '' && !isNaN(scoreNum) && !isNaN(maxNum) && maxNum > 0) {
         const rowPct = Number(((scoreNum / maxNum) * 100).toFixed(1));
         const isGood = isAvgEligiblePercent(rowPct);
+        const isBadCancel = isBadCancelPercent(rowPct);
         if (pctBadge) {
-          pctBadge.textContent = `${rowPct}%${isGood ? ' ⭐' : ''}`;
+          pctBadge.textContent = `${rowPct}%${isGood ? (isMini ? ' ⅕' : ' ⭐') : (isBadCancel ? ' ✕' : '')}`;
           pctBadge.classList.toggle('is-good', isGood);
-          pctBadge.classList.toggle('is-low', !isGood);
+          pctBadge.classList.toggle('is-low', isBadCancel);
+          pctBadge.classList.toggle('is-mid', !isGood && !isBadCancel);
         }
         totalScore += scoreNum;
         totalMax += maxNum;
         enteredCount++;
-        if (isGood) goodThisMonth++;
+        if (isGood && !isMini) goodThisMonth++;
         const quizObj = { title: title || 'Quiz', score: scoreNum, maxScore: maxNum };
         quizzes.push(quizObj);
         draftQuizzes.push(quizObj);
       } else {
         if (pctBadge) {
           pctBadge.textContent = '—';
-          pctBadge.classList.remove('is-good', 'is-low');
+          pctBadge.classList.remove('is-good', 'is-low', 'is-mid');
         }
         const emptyObj = { title: title || 'Quiz', score: isNaN(scoreNum) ? 0 : scoreNum, maxScore: isNaN(maxNum) ? 20 : maxNum };
         quizzes.push(emptyObj);
@@ -2325,10 +2595,11 @@
     const activeStudent = state.students.find(s => s.id === studentId);
     const liveQuest = activeStudent
       ? evaluateGiftQuest(activeStudent, null, { monthKey: targetMonthKey, quizzes: draftQuizzes })
-      : { points: goodThisMonth, totalQuizzes: enteredCount, combinedAvg: combinedPercent, hasGift: goodThisMonth >= GIFT_REQUIRED_QUIZZES && isAvgEligiblePercent(combinedPercent), stepProgress: Math.min(10, goodThisMonth), quizzesRemaining: Math.max(0, 10 - goodThisMonth), avgRemaining: Math.max(0, Number((70 - combinedPercent).toFixed(1))), hasCompleted10: goodThisMonth >= 10, avgMet: isAvgEligiblePercent(combinedPercent), cancelledPoints: 0 };
+      : { points: goodThisMonth, frozenCount: 0, behaviorCancelledCount: 0, miniBufferCount: 0, totalQuizzes: enteredCount, combinedAvg: combinedPercent, hasGift: goodThisMonth >= GIFT_REQUIRED_QUIZZES && isAvgEligiblePercent(combinedPercent), stepProgress: Math.min(10, goodThisMonth), quizzesRemaining: Math.max(0, 10 - goodThisMonth), avgRemaining: Math.max(0, Number((70 - combinedPercent).toFixed(1))), hasCompleted10: goodThisMonth >= 10, avgMet: isAvgEligiblePercent(combinedPercent), cancelledPoints: 0 };
 
     if (elements.quizGoodCountDisplay) {
-      elements.quizGoodCountDisplay.textContent = `${liveQuest.points} / ${GIFT_REQUIRED_QUIZZES} ⭐`;
+      const miniSuffix = liveQuest.miniBufferCount > 0 ? ` (+${liveQuest.miniBufferCount}/${MINI_QUIZZES_PER_POINT})` : '';
+      elements.quizGoodCountDisplay.textContent = `${liveQuest.points} / ${GIFT_REQUIRED_QUIZZES} ⭐${miniSuffix}`;
     }
     if (elements.btnSyncPctVal) {
       elements.btnSyncPctVal.textContent = `${combinedPercent}%`;
@@ -2512,6 +2783,12 @@
       openGradeEntryModal(student.id);
     };
 
+    if (elements.btnDetailBehavior) {
+      elements.btnDetailBehavior.onclick = () => {
+        openBehaviorActionModal(student.id);
+      };
+    }
+
     // Render 10-Step Gamified Gift Quest Board inside Student Profile
     const isAr = (state.lang === 'ar');
     const overallQuest = evaluateGiftQuest(student, state.selectedMonth);
@@ -2526,7 +2803,7 @@
             <div class="detail-quest-title">${AppIcons.gift} <span>${questTitle}</span></div>
             <span class="gift-quest-tier ${overallQuest.tier}">${overallQuest.points} / ${GIFT_REQUIRED_QUIZZES} • ${overallQuest.combinedAvg}%</span>
           </div>
-          ${renderQuestStepsHtml(overallQuest)}
+          ${renderQuestStepsHtml(overallQuest, student.id)}
         `;
       } else {
         elements.detailGiftQuestBoard.style.display = 'none';
@@ -2640,6 +2917,236 @@
   }
 
   // =========================================================================
+  // BEHAVIOR POINT MODERATION (ADMIN: FREEZE / CANCEL) & FREEZE REASON VIEWER
+  // =========================================================================
+  function getPresetBehaviorReasons() {
+    return (state.lang === 'ar')
+      ? ['مشاغبة في الحصة', 'عدم احترام التعليمات', 'تأخر أو إهمال الواجب', 'حديث جانبي متكرر']
+      : ['Classroom disruption', 'Rule violation', 'Negligence / late work', 'Repeated talking in class'];
+  }
+
+  function renderBehaviorExistingList(student) {
+    if (!elements.behaviorExistingList) return;
+    const isAr = (state.lang === 'ar');
+    const actions = Array.isArray(student.behaviorActions) ? student.behaviorActions : [];
+    if (actions.length === 0) {
+      elements.behaviorExistingList.innerHTML = `<div class="behavior-empty-msg">${isAr ? 'لا توجد نقاط مجمدة أو ملغاة سلوكياً لهذا الطالب.' : 'No frozen or behavior-cancelled points for this student.'}</div>`;
+      return;
+    }
+    elements.behaviorExistingList.innerHTML = actions.slice().reverse().map(act => {
+      const isFreeze = act.action === 'freeze';
+      const badgeText = isFreeze ? (isAr ? '❄️ مجمدة (موقفة)' : '❄️ Frozen') : (isAr ? '🚫 ملغاة نهائياً' : '🚫 Cancelled');
+      const btnLabel = isFreeze ? t('unfreezeBtn') : t('removeActionBtn');
+      const dateStr = act.createdAt ? new Date(act.createdAt).toLocaleDateString(isAr ? 'ar' : 'en') : '';
+      return `
+        <div class="behavior-action-row ${isFreeze ? 'is-freeze' : 'is-cancel'}">
+          <div class="behavior-action-info">
+            <div class="behavior-action-top">
+              <span class="behavior-action-badge ${isFreeze ? 'is-freeze' : 'is-cancel'}">${badgeText}</span>
+              ${dateStr ? `<span class="behavior-action-date">${escapeHtml(dateStr)}</span>` : ''}
+            </div>
+            <div class="behavior-action-reason">${escapeHtml(act.reason || '')}</div>
+          </div>
+          <button type="button" class="btn btn-xs btn-outline btn-remove-behavior" data-student-id="${student.id}" data-action-id="${escapeHtml(act.id)}">
+            ${btnLabel}
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openBehaviorActionModal(studentId, targetPointIndex = null) {
+    if (!state.isAdmin) {
+      showToast('toastAdminReqGrade', 'warning');
+      openAdminAuthModal();
+      return;
+    }
+    const student = state.students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const isAr = (state.lang === 'ar');
+    const quest = evaluateGiftQuest(student, state.selectedMonth);
+
+    elements.behaviorStudentId.value = student.id;
+    elements.behaviorTargetIndex.value = (targetPointIndex !== null && targetPointIndex !== undefined && !isNaN(targetPointIndex)) ? String(targetPointIndex) : '';
+    elements.behaviorModalStudentName.textContent = `${isAr ? 'الطالب' : 'Student'}: ${student.name}`;
+    elements.behaviorReasonInput.value = '';
+
+    if (elements.behaviorPointsSummary) {
+      elements.behaviorPointsSummary.innerHTML = `
+        <span>${isAr ? 'النقاط الفعالة' : 'Active Points'}: <strong>${quest.points}/${GIFT_REQUIRED_QUIZZES}</strong></span>
+        <span>❄️ ${isAr ? 'موقفة' : 'Frozen'}: <strong>${quest.frozenCount}</strong></span>
+        <span>🚫 ${isAr ? 'ملغاة سلوكياً' : 'Cancelled'}: <strong>${quest.behaviorCancelledCount}</strong></span>
+      `;
+    }
+
+    if (elements.behaviorQuickReasons) {
+      elements.behaviorQuickReasons.innerHTML = getPresetBehaviorReasons().map(r =>
+        `<button type="button" class="behavior-chip-btn" data-reason="${escapeHtml(r)}">${escapeHtml(r)}</button>`
+      ).join('');
+    }
+
+    renderBehaviorExistingList(student);
+    openModal(elements.modalBehaviorAction);
+    setTimeout(() => {
+      if (elements.behaviorReasonInput) elements.behaviorReasonInput.focus();
+    }, 100);
+  }
+
+  function handleBehaviorFormSubmit(e) {
+    e.preventDefault();
+    if (!state.isAdmin) return;
+
+    const studentId = elements.behaviorStudentId.value;
+    const student = state.students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const actionEl = elements.behaviorActionForm.querySelector('input[name="behaviorActionType"]:checked');
+    const actionType = actionEl ? actionEl.value : 'freeze';
+    const reason = (elements.behaviorReasonInput.value || '').trim();
+    if (!reason) return;
+
+    const quest = evaluateGiftQuest(student, state.selectedMonth);
+    if (quest.points <= 0) {
+      showToast(state.lang === 'ar' ? 'لا توجد نقاط فعالة لتجميدها أو إلغائها.' : 'No active points available to freeze or cancel.', 'warning');
+      return;
+    }
+
+    let targetIndex = elements.behaviorTargetIndex.value !== '' ? Number(elements.behaviorTargetIndex.value) : null;
+    if (targetIndex === null || isNaN(targetIndex) || !quest.trailPoints[targetIndex] || quest.trailPoints[targetIndex].isFrozen) {
+      // Pick the latest active unfrozen point index
+      targetIndex = -1;
+      for (let i = quest.trailPoints.length - 1; i >= 0; i--) {
+        if (!quest.trailPoints[i].isFrozen) {
+          targetIndex = i;
+          break;
+        }
+      }
+    }
+
+    if (!Array.isArray(student.behaviorActions)) student.behaviorActions = [];
+    student.behaviorActions.push({
+      id: `beh_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      action: actionType,
+      reason,
+      monthKey: state.selectedMonth,
+      targetIndex: targetIndex >= 0 ? targetIndex : undefined,
+      createdAt: new Date().toISOString()
+    });
+
+    saveData();
+    syncStudentToApi(student);
+    renderHighlights();
+    renderStudents();
+
+    if (elements.modalStudentDetail && elements.modalStudentDetail.classList.contains('active')) {
+      openStudentDetailModal(student.id);
+    }
+
+    closeModal(elements.modalBehaviorAction);
+    showToast(actionType === 'freeze' ? 'toastPointFrozen' : 'toastPointCancelled', 'info');
+  }
+
+  function removeBehaviorAction(studentId, actionId) {
+    if (!state.isAdmin) return;
+    const student = state.students.find(s => s.id === studentId);
+    if (!student || !Array.isArray(student.behaviorActions)) return;
+
+    const idx = student.behaviorActions.findIndex(a => a.id === actionId);
+    if (idx === -1) return;
+    const removed = student.behaviorActions[idx];
+    student.behaviorActions.splice(idx, 1);
+
+    saveData();
+    syncStudentToApi(student);
+    renderHighlights();
+    renderStudents();
+
+    if (elements.modalBehaviorAction && elements.modalBehaviorAction.classList.contains('active')) {
+      openBehaviorActionModal(student.id);
+    }
+    if (elements.modalStudentDetail && elements.modalStudentDetail.classList.contains('active')) {
+      openStudentDetailModal(student.id);
+    }
+    showToast(removed.action === 'freeze' ? 'toastPointUnfrozen' : 'toastBehaviorRemoved', 'success');
+  }
+
+  function openFreezeReasonModal(studentId, pointIndex) {
+    const student = state.students.find(s => s.id === studentId);
+    if (!student) return;
+
+    const isAr = (state.lang === 'ar');
+    const quest = evaluateGiftQuest(student, state.selectedMonth);
+    const pt = quest.trailPoints[pointIndex];
+    if (!pt || !pt.isFrozen) return;
+
+    const meta = pt.subject || getQuizSubjectMeta(pt.title);
+    const dateStr = pt.freezeDate ? new Date(pt.freezeDate).toLocaleDateString(isAr ? 'ar' : 'en') : '';
+
+    if (elements.freezeReasonBody) {
+      elements.freezeReasonBody.innerHTML = `
+        <div class="freeze-reason-card">
+          <div class="freeze-reason-quiz">
+            <span class="quiz-subject-badge subject-${meta.key}">${meta.icon}</span>
+            <div>
+              <strong>${escapeHtml(student.name)}</strong>
+              <div style="font-size:0.8rem; color: var(--text-muted);">${escapeHtml(pt.title)} (${pt.pct}%)</div>
+            </div>
+          </div>
+          <div class="freeze-reason-box">
+            <div class="freeze-reason-label">${isAr ? 'سبب تجميد / إيقاف النقطة:' : 'Reason Point Was Paused:'}</div>
+            <div class="freeze-reason-text">${escapeHtml(pt.freezeReason || (isAr ? 'موقفة بسبب السلوك' : 'Paused due to behavior'))}</div>
+            ${dateStr ? `<div class="freeze-reason-date">${isAr ? 'التاريخ:' : 'Date:'} ${escapeHtml(dateStr)}</div>` : ''}
+          </div>
+          <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:10px;">
+            ${isAr ? 'هذه النقطة موجودة ولكنها مجمدة مؤقتاً ولا تُحتسب ضمن الـ 10 نقاط حتى يتم فك تجميدها.' : 'This point remains visible in the trail as paused and does not count toward the 10 points until unfrozen.'}
+          </p>
+        </div>
+      `;
+    }
+
+    if (elements.freezeReasonActions) {
+      let btnsHtml = `<button type="button" class="btn btn-outline" data-close="modal-freeze-reason">${t('closeBtn')}</button>`;
+      if (state.isAdmin && pt.freezeId) {
+        btnsHtml += `
+          <button type="button" class="btn btn-primary" id="btn-quick-unfreeze" data-student-id="${student.id}" data-action-id="${escapeHtml(pt.freezeId)}">
+            ${t('unfreezeBtn')}
+          </button>
+        `;
+      }
+      elements.freezeReasonActions.innerHTML = btnsHtml;
+      const closeBtn = elements.freezeReasonActions.querySelector('[data-close="modal-freeze-reason"]');
+      if (closeBtn) closeBtn.onclick = () => closeModal(elements.modalFreezeReason);
+      const unfreezeBtn = document.getElementById('btn-quick-unfreeze');
+      if (unfreezeBtn) {
+        unfreezeBtn.onclick = () => {
+          closeModal(elements.modalFreezeReason);
+          removeBehaviorAction(student.id, pt.freezeId);
+        };
+      }
+    }
+
+    openModal(elements.modalFreezeReason);
+  }
+
+  function handleQuestBoardClick(e) {
+    const frozenDot = e.target.closest('.quest-step-dot.frozen');
+    if (frozenDot && frozenDot.dataset.studentId) {
+      e.stopPropagation();
+      openFreezeReasonModal(frozenDot.dataset.studentId, Number(frozenDot.dataset.pointIndex));
+      return true;
+    }
+
+    const earnedDot = e.target.closest('.quest-step-dot.earned');
+    if (earnedDot && state.isAdmin && earnedDot.dataset.studentId) {
+      e.stopPropagation();
+      openBehaviorActionModal(earnedDot.dataset.studentId, Number(earnedDot.dataset.pointIndex));
+      return true;
+    }
+    return false;
+  }
+
+  // =========================================================================
   // CELEBRATION & CONFETTI ANIMATION
   // =========================================================================
   function triggerCelebration() {
@@ -2749,9 +3256,10 @@
       });
     }
 
-    // Clickable Gift Quest items open student's quest board modal
+    // Clickable Gift Quest items & dots (frozen dot shows reason to everyone; earned dot lets admin freeze/cancel)
     if (elements.giftQualifiedList) {
       elements.giftQualifiedList.addEventListener('click', (e) => {
+        if (handleQuestBoardClick(e)) return;
         const card = e.target.closest('.gift-quest-item');
         if (card && card.dataset.studentId) {
           openStudentDetailModal(card.dataset.studentId);
@@ -2759,11 +3267,45 @@
       });
       elements.giftQualifiedList.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
+          const frozenDot = e.target.closest('.quest-step-dot.frozen');
+          if (frozenDot && frozenDot.dataset.studentId) {
+            e.preventDefault();
+            e.stopPropagation();
+            openFreezeReasonModal(frozenDot.dataset.studentId, Number(frozenDot.dataset.pointIndex));
+            return;
+          }
           const card = e.target.closest('.gift-quest-item');
           if (card && card.dataset.studentId) {
             e.preventDefault();
             openStudentDetailModal(card.dataset.studentId);
           }
+        }
+      });
+    }
+
+    if (elements.detailGiftQuestBoard) {
+      elements.detailGiftQuestBoard.addEventListener('click', (e) => {
+        handleQuestBoardClick(e);
+      });
+    }
+
+    if (elements.behaviorActionForm) {
+      elements.behaviorActionForm.addEventListener('submit', handleBehaviorFormSubmit);
+    }
+    if (elements.behaviorQuickReasons) {
+      elements.behaviorQuickReasons.addEventListener('click', (e) => {
+        const chip = e.target.closest('.behavior-chip-btn');
+        if (chip && elements.behaviorReasonInput) {
+          elements.behaviorReasonInput.value = chip.dataset.reason || '';
+          elements.behaviorReasonInput.focus();
+        }
+      });
+    }
+    if (elements.behaviorExistingList) {
+      elements.behaviorExistingList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-remove-behavior');
+        if (btn) {
+          removeBehaviorAction(btn.dataset.studentId, btn.dataset.actionId);
         }
       });
     }
@@ -3082,6 +3624,12 @@
       const btnGrade = e.target.closest('.btn-enter-grade');
       if (btnGrade) {
         openGradeEntryModal(btnGrade.dataset.id);
+        return;
+      }
+
+      const btnBehavior = e.target.closest('.btn-behavior-student');
+      if (btnBehavior) {
+        openBehaviorActionModal(btnBehavior.dataset.id);
         return;
       }
 

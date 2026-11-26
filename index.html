@@ -627,6 +627,9 @@
 
       <div class="modal-actions">
         <button type="button" class="btn btn-outline" data-close="modal-student-detail" data-i18n="closeBtn">Close</button>
+        <button type="button" id="btn-detail-behavior" class="btn btn-outline btn-freeze-trigger admin-only-btn admin-only">
+          <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20m-4.93-7.07L12 10 6.93 4.93m10.14 14.14L12 14l-5.07 5.07M4.93 17.07 10 12 4.93 6.93m14.14 10.14L14 12l5.07-5.07"/></svg> <span data-i18n="manageBehaviorBtn">Behavior / Freeze Point</span>
+        </button>
         <button type="button" id="btn-detail-add-grade" class="btn btn-primary admin-only-btn admin-only">
           <svg class="svg-icon sm" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg> <span data-i18n="addMonthGradeBtn">Add Month Grade</span>
         </button>
@@ -650,6 +653,89 @@
       <div class="modal-actions">
         <button type="button" class="btn btn-outline" data-close="modal-delete-confirm" data-i18n="cancelBtn">Cancel</button>
         <button type="button" id="btn-confirm-delete" class="btn btn-danger" data-i18n="deletePermanentlyBtn">Delete Permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Behavior Point Moderation Modal (Admin Only: Freeze or Cancel Point) -->
+  <div id="modal-behavior-action" class="modal-backdrop" aria-hidden="true">
+    <div class="modal card modal-md" role="dialog" aria-labelledby="behavior-modal-title">
+      <div class="modal-header">
+        <div>
+          <h3 id="behavior-modal-title" class="modal-title">
+            <svg class="svg-icon md" viewBox="0 0 24 24" style="color: #0284c7;"><path d="M12 2v20M2 12h20m-4.93-7.07L12 10 6.93 4.93m10.14 14.14L12 14l-5.07 5.07M4.93 17.07 10 12 4.93 6.93m14.14 10.14L14 12l5.07-5.07"/></svg>
+            <span data-i18n="behaviorModalTitle">Behavior &amp; Point Control</span>
+          </h3>
+          <p id="behavior-modal-student-name" class="modal-subtitle">Student</p>
+        </div>
+        <button class="modal-close-btn" data-close="modal-behavior-action">&times;</button>
+      </div>
+      <form id="behavior-action-form" class="modal-body">
+        <input type="hidden" id="behavior-student-id" value="">
+        <input type="hidden" id="behavior-target-index" value="">
+
+        <div id="behavior-points-summary" class="behavior-summary-strip">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="form-group">
+          <label data-i18n="behaviorActionTypeLabel">Action Type *</label>
+          <div class="behavior-type-toggle">
+            <label class="behavior-type-option">
+              <input type="radio" name="behaviorActionType" value="freeze" checked>
+              <span class="behavior-type-card is-freeze">
+                <strong data-i18n="actionFreezeTitle">❄️ Freeze Point (Paused)</strong>
+                <small data-i18n="actionFreezeDesc">Point stays visible in trail as paused; doesn't count until unfrozen.</small>
+              </span>
+            </label>
+            <label class="behavior-type-option">
+              <input type="radio" name="behaviorActionType" value="cancel">
+              <span class="behavior-type-card is-cancel">
+                <strong data-i18n="actionCancelTitle">🚫 Cancel Point Permanently</strong>
+                <small data-i18n="actionCancelDesc">Removes 1 earned point permanently due to behavior.</small>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="behavior-reason-input" data-i18n="behaviorReasonLabel">Reason (shown on hover &amp; click) *</label>
+          <div id="behavior-quick-reasons" class="behavior-reason-chips">
+            <!-- Quick preset reason chips -->
+          </div>
+          <input type="text" id="behavior-reason-input" class="form-input mt-2" required maxlength="160" data-i18n-placeholder="behaviorReasonPlaceholder" placeholder="e.g. Classroom disruption / misbehavior">
+        </div>
+
+        <div class="modal-actions" style="padding: 10px 0 0; border-top: none;">
+          <button type="button" class="btn btn-outline" data-close="modal-behavior-action" data-i18n="cancelBtn">Cancel</button>
+          <button type="submit" id="btn-submit-behavior" class="btn btn-primary" data-i18n="applyBehaviorActionBtn">Apply Action</button>
+        </div>
+      </form>
+
+      <div class="behavior-existing-section">
+        <h4 class="behavior-existing-title" data-i18n="behaviorHistoryTitle">Frozen &amp; Behavior-Cancelled Points</h4>
+        <div id="behavior-existing-list" class="behavior-existing-list">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. Frozen Point Reason Modal (Shown to Everyone on Click) -->
+  <div id="modal-freeze-reason" class="modal-backdrop" aria-hidden="true">
+    <div class="modal card modal-sm" role="dialog" aria-labelledby="freeze-reason-title">
+      <div class="modal-header">
+        <h3 id="freeze-reason-title" class="modal-title">
+          <svg class="svg-icon md" viewBox="0 0 24 24" style="color: #0284c7;"><path d="M12 2v20M2 12h20m-4.93-7.07L12 10 6.93 4.93m10.14 14.14L12 14l-5.07 5.07M4.93 17.07 10 12 4.93 6.93m14.14 10.14L14 12l5.07-5.07"/></svg>
+          <span data-i18n="frozenPointTitle">Paused / Frozen Point</span>
+        </h3>
+        <button class="modal-close-btn" data-close="modal-freeze-reason">&times;</button>
+      </div>
+      <div class="modal-body" id="freeze-reason-body">
+        <!-- Populated dynamically -->
+      </div>
+      <div class="modal-actions" id="freeze-reason-actions">
+        <button type="button" class="btn btn-outline" data-close="modal-freeze-reason" data-i18n="closeBtn">Close</button>
       </div>
     </div>
   </div>

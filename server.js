@@ -26,7 +26,8 @@ const studentSchema = new mongoose.Schema(
     avatarColor: { type: String, default: 'indigo' },
     avatarUrl: { type: String, default: '' },
     notes: { type: String, default: '' },
-    records: { type: mongoose.Schema.Types.Mixed, default: {} }
+    records: { type: mongoose.Schema.Types.Mixed, default: {} },
+    behaviorActions: { type: [mongoose.Schema.Types.Mixed], default: [] }
   },
   {
     timestamps: true,
@@ -166,7 +167,8 @@ app.post('/api/students', async (req, res) => {
       avatarColor: avatarColor || 'indigo',
       avatarUrl: avatarUrl || imageUrl || '',
       notes: notes || '',
-      records: req.body.records || {}
+      records: req.body.records || {},
+      behaviorActions: Array.isArray(req.body.behaviorActions) ? req.body.behaviorActions : []
     });
 
     await newStudent.save();
