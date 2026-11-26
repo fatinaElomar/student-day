@@ -825,10 +825,10 @@ body.light-theme .app-header {
   border-radius: var(--radius-md);
   transition: var(--transition);
   cursor: pointer;
-  flex: 0 0 260px;
-  min-width: 220px;
-  max-width: 300px;
-  scroll-snap-align: start;
+  flex: 0 0 100%;
+  min-width: 0;
+  max-width: 100%;
+  scroll-snap-align: center;
 }
 
 .gift-quest-item:hover {
@@ -4148,9 +4148,9 @@ body.arabic-mode {
   }
 
   .gift-quest-item {
-    flex: 0 0 220px;
-    min-width: 200px;
-    max-width: 260px;
+    flex: 0 0 100%;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .gift-carousel-btn {
