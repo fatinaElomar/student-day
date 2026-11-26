@@ -669,9 +669,17 @@
       <form id="behavior-action-form" class="modal-body">
         <input type="hidden" id="behavior-student-id" value="">
         <input type="hidden" id="behavior-target-index" value="">
+        <input type="hidden" id="behavior-target-key" value="">
 
         <div id="behavior-points-summary" class="behavior-summary-strip">
           <!-- Populated dynamically -->
+        </div>
+
+        <div class="form-group">
+          <label data-i18n="selectTargetPointLabel">Select Point to Freeze / Cancel *</label>
+          <div id="behavior-point-picker" class="behavior-point-picker">
+            <!-- Dynamically populated with student's points (#1, #2, #3...) -->
+          </div>
         </div>
 
         <div class="form-group">

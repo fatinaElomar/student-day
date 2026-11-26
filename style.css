@@ -3710,6 +3710,112 @@ body.arabic-mode {
 .behavior-action-badge.is-freeze { color: #0369a1; }
 .behavior-action-badge.is-cancel { color: #be123c; }
 
+.behavior-action-target {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: #f1f5f9;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* Visual Point Picker inside Behavior Modal */
+.behavior-point-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 145px;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+
+.behavior-point-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-subtle);
+  background: #ffffff;
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  transition: var(--transition);
+}
+
+.behavior-point-chip.is-active {
+  cursor: pointer;
+}
+
+.behavior-point-chip.is-active:hover {
+  border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.behavior-point-chip.is-active.selected {
+  border-color: #0284c7;
+  background: rgba(2, 132, 199, 0.1);
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+}
+
+.behavior-point-chip.is-frozen {
+  background: rgba(2, 132, 199, 0.08);
+  border: 1px dashed #0284c7;
+  color: #0369a1;
+}
+
+.point-chip-num {
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.point-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  color: #ffffff;
+}
+
+.behavior-point-chip.is-frozen .point-chip-icon {
+  background: #0284c7;
+}
+
+.point-chip-icon.subject-science { background: #0891b2; }
+.point-chip-icon.subject-chemistry { background: #7c3aed; }
+.point-chip-icon.subject-physics { background: #2563eb; }
+.point-chip-icon.subject-biology { background: #059669; }
+.point-chip-icon.subject-math { background: #4338ca; }
+.point-chip-icon.subject-arabic { background: #d97706; }
+.point-chip-icon.subject-english { background: #db2777; }
+.point-chip-icon.subject-french { background: #0284c7; }
+.point-chip-icon.subject-islamic { background: #047857; }
+.point-chip-icon.subject-history { background: #b45309; }
+.point-chip-icon.subject-geography { background: #0d9488; }
+.point-chip-icon.subject-computer { background: #334155; }
+.point-chip-icon.subject-art { background: #e11d48; }
+.point-chip-icon.subject-default { background: #f59e0b; }
+
+.point-chip-unfreeze {
+  margin-inline-start: 4px;
+  border: 1px solid rgba(2, 132, 199, 0.35);
+  background: #ffffff;
+  color: #0369a1;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.point-chip-unfreeze:hover {
+  background: #0284c7;
+  color: #ffffff;
+}
+
 .behavior-action-date {
   font-size: 0.68rem;
   color: var(--text-muted);

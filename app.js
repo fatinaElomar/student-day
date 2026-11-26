@@ -431,6 +431,7 @@
       toastPointCancelled: 'Point permanently cancelled due to behavior.',
       toastPointUnfrozen: 'Point unfrozen and active again!',
       toastBehaviorRemoved: 'Behavior action removed.',
+      selectTargetPointLabel: 'Choose Which Point to Freeze / Cancel *',
       toastTableAdminOnly: 'Table view is only accessible to Admin.',
       toastAdminReqGrade: 'Admin privileges required'
     },
@@ -618,7 +619,8 @@
       toastPointFrozen: 'تم تجميد النقطة مع حفظ السبب.',
       toastPointCancelled: 'تم إلغاء النقطة نهائياً بسبب السلوك.',
       toastPointUnfrozen: 'تم فك تجميد النقطة وعادت فعالة!',
-      toastBehaviorRemoved: 'تمت إزالة إجراء السلوك.'
+      toastBehaviorRemoved: 'تمت إزالة إجراء السلوك.',
+      selectTargetPointLabel: 'اختر النقطة التي تريد تجميدها أو إلغاءها *'
     }
   };
 
@@ -797,8 +799,10 @@
     behaviorActionForm: document.getElementById('behavior-action-form'),
     behaviorStudentId: document.getElementById('behavior-student-id'),
     behaviorTargetIndex: document.getElementById('behavior-target-index'),
+    behaviorTargetKey: document.getElementById('behavior-target-key'),
     behaviorModalStudentName: document.getElementById('behavior-modal-student-name'),
     behaviorPointsSummary: document.getElementById('behavior-points-summary'),
+    behaviorPointPicker: document.getElementById('behavior-point-picker'),
     behaviorQuickReasons: document.getElementById('behavior-quick-reasons'),
     behaviorReasonInput: document.getElementById('behavior-reason-input'),
     behaviorExistingList: document.getElementById('behavior-existing-list'),
@@ -1283,7 +1287,8 @@
         }
       }
 
-      quizzesList.forEach(q => {
+      let miniBundleSeq = 0;
+      quizzesList.forEach((q, qIdx) => {
         const maxNum = Number(q.maxScore) || 0;
         const scoreNum = Number(q.score) || 0;
         if (maxNum <= 0 || q.isEmpty) return;
@@ -1310,10 +1315,12 @@
               subject: getQuizSubjectMeta(rawTitle)
             });
             if (miniGoodPool.length >= MINI_QUIZZES_PER_POINT) {
+              miniBundleSeq++;
               const batch = miniGoodPool.splice(0, MINI_QUIZZES_PER_POINT);
               const batchAvg = Number((batch.reduce((acc, item) => acc + item.pct, 0) / batch.length).toFixed(1));
               const lastSubj = batch[batch.length - 1].subject || DEFAULT_SUBJECT_META;
               trailPoints.push({
+                pointKey: `${mKey}|mini|${miniBundleSeq}`,
                 kind: 'mini_bundle',
                 title: batch.map(b => `${b.title} (${b.pct}%)`).join(' • '),
                 miniQuizzes: batch,
@@ -1325,6 +1332,7 @@
             }
           } else {
             trailPoints.push({
+              pointKey: `${mKey}|reg|${qIdx}|${rawTitle}`,
               kind: 'regular',
               title: rawTitle,
               pct: Number(quizPct.toFixed(1)),
@@ -1376,20 +1384,24 @@
     let behaviorCancelledCount = 0;
     const behaviorCancelledList = [];
 
+    const findActionTargetIndex = (act) => {
+      if (act.targetPointKey) {
+        const byKey = trailPoints.findIndex(p => p.pointKey === act.targetPointKey && !p.isFrozen);
+        if (byKey !== -1) return byKey;
+      }
+      if (typeof act.targetIndex === 'number' && trailPoints[act.targetIndex] && !trailPoints[act.targetIndex].isFrozen) {
+        return act.targetIndex;
+      }
+      for (let k = trailPoints.length - 1; k >= 0; k--) {
+        if (!trailPoints[k].isFrozen) return k;
+      }
+      return -1;
+    };
+
     relevantActions.forEach(act => {
       if (!act || !act.action) return;
       if (act.action === 'cancel') {
-        let idx = -1;
-        if (typeof act.targetIndex === 'number' && trailPoints[act.targetIndex] && !trailPoints[act.targetIndex].isFrozen) {
-          idx = act.targetIndex;
-        } else {
-          for (let k = trailPoints.length - 1; k >= 0; k--) {
-            if (!trailPoints[k].isFrozen) {
-              idx = k;
-              break;
-            }
-          }
-        }
+        let idx = findActionTargetIndex(act);
         if (idx === -1 && trailPoints.length > 0) idx = trailPoints.length - 1;
         if (idx !== -1) {
           const [removedPt] = trailPoints.splice(idx, 1);
@@ -1397,17 +1409,7 @@
           behaviorCancelledList.push({ ...act, removedTitle: removedPt ? removedPt.title : '' });
         }
       } else if (act.action === 'freeze') {
-        let idx = -1;
-        if (typeof act.targetIndex === 'number' && trailPoints[act.targetIndex] && !trailPoints[act.targetIndex].isFrozen) {
-          idx = act.targetIndex;
-        } else {
-          for (let k = trailPoints.length - 1; k >= 0; k--) {
-            if (!trailPoints[k].isFrozen) {
-              idx = k;
-              break;
-            }
-          }
-        }
+        const idx = findActionTargetIndex(act);
         if (idx !== -1) {
           trailPoints[idx].isFrozen = true;
           trailPoints[idx].freezeReason = act.reason || '';
@@ -2956,11 +2958,13 @@
       const badgeText = isFreeze ? (isAr ? '❄️ مجمدة (موقفة)' : '❄️ Frozen') : (isAr ? '🚫 ملغاة نهائياً' : '🚫 Cancelled');
       const btnLabel = isFreeze ? t('unfreezeBtn') : t('removeActionBtn');
       const dateStr = act.createdAt ? new Date(act.createdAt).toLocaleDateString(isAr ? 'ar' : 'en') : '';
+      const targetBadge = act.targetTitle ? `<span class="behavior-action-target">${escapeHtml(act.targetTitle)}</span>` : '';
       return `
         <div class="behavior-action-row ${isFreeze ? 'is-freeze' : 'is-cancel'}">
           <div class="behavior-action-info">
             <div class="behavior-action-top">
               <span class="behavior-action-badge ${isFreeze ? 'is-freeze' : 'is-cancel'}">${badgeText}</span>
+              ${targetBadge}
               ${dateStr ? `<span class="behavior-action-date">${escapeHtml(dateStr)}</span>` : ''}
             </div>
             <div class="behavior-action-reason">${escapeHtml(act.reason || '')}</div>
@@ -2984,9 +2988,27 @@
 
     const isAr = (state.lang === 'ar');
     const quest = evaluateGiftQuest(student, state.selectedMonth);
+    const trail = Array.isArray(quest.trailPoints) ? quest.trailPoints : [];
+
+    // Resolve default selected active point index (either clicked dot, or latest active unfrozen point)
+    let selectedIdx = (targetPointIndex !== null && targetPointIndex !== undefined && !isNaN(targetPointIndex))
+      ? Number(targetPointIndex)
+      : -1;
+    if (selectedIdx < 0 || !trail[selectedIdx] || trail[selectedIdx].isFrozen) {
+      selectedIdx = -1;
+      for (let i = trail.length - 1; i >= 0; i--) {
+        if (!trail[i].isFrozen) {
+          selectedIdx = i;
+          break;
+        }
+      }
+    }
 
     elements.behaviorStudentId.value = student.id;
-    elements.behaviorTargetIndex.value = (targetPointIndex !== null && targetPointIndex !== undefined && !isNaN(targetPointIndex)) ? String(targetPointIndex) : '';
+    elements.behaviorTargetIndex.value = selectedIdx >= 0 ? String(selectedIdx) : '';
+    if (elements.behaviorTargetKey) {
+      elements.behaviorTargetKey.value = (selectedIdx >= 0 && trail[selectedIdx]) ? (trail[selectedIdx].pointKey || '') : '';
+    }
     elements.behaviorModalStudentName.textContent = `${isAr ? 'الطالب' : 'Student'}: ${student.name}`;
     elements.behaviorReasonInput.value = '';
 
@@ -2996,6 +3018,40 @@
         <span>❄️ ${isAr ? 'موقفة' : 'Frozen'}: <strong>${quest.frozenCount}</strong></span>
         <span>🚫 ${isAr ? 'ملغاة سلوكياً' : 'Cancelled'}: <strong>${quest.behaviorCancelledCount}</strong></span>
       `;
+    }
+
+    if (elements.behaviorPointPicker) {
+      if (trail.length === 0) {
+        elements.behaviorPointPicker.innerHTML = `<div class="behavior-empty-msg">${isAr ? 'لا توجد نقاط مكتسبة للاختيار منها بعد.' : 'No earned points available to select yet.'}</div>`;
+      } else {
+        elements.behaviorPointPicker.innerHTML = trail.map((pt, idx) => {
+          const meta = pt.subject || getQuizSubjectMeta(pt.title);
+          const shortTitle = pt.kind === 'mini_bundle'
+            ? (isAr ? '5 صغار' : '5 Mini')
+            : pt.title;
+          if (pt.isFrozen) {
+            return `
+              <div class="behavior-point-chip is-frozen" title="${escapeHtml(pt.freezeReason || '')}">
+                <span class="point-chip-num">#${idx + 1}</span>
+                <span class="point-chip-icon">${AppIcons.snowflake}</span>
+                <span class="point-chip-label">${escapeHtml(shortTitle)} (${pt.pct}%) • ${isAr ? 'مجمدة' : 'Frozen'}</span>
+                ${pt.freezeId ? `<button type="button" class="point-chip-unfreeze btn-remove-behavior" data-student-id="${student.id}" data-action-id="${escapeHtml(pt.freezeId)}" title="${t('unfreezeBtn')}">${t('unfreezeBtn')}</button>` : ''}
+              </div>
+            `;
+          }
+          const isSelected = (idx === selectedIdx);
+          return `
+            <button type="button"
+                    class="behavior-point-chip is-active ${isSelected ? 'selected' : ''}"
+                    data-point-index="${idx}"
+                    data-point-key="${escapeHtml(pt.pointKey || '')}">
+              <span class="point-chip-num">#${idx + 1}</span>
+              <span class="point-chip-icon subject-${meta.key}">${meta.icon}</span>
+              <span class="point-chip-label">${escapeHtml(shortTitle)} (${pt.pct}%)</span>
+            </button>
+          `;
+        }).join('');
+      }
     }
 
     if (elements.behaviorQuickReasons) {
@@ -3030,18 +3086,27 @@
       return;
     }
 
-    let targetIndex = elements.behaviorTargetIndex.value !== '' ? Number(elements.behaviorTargetIndex.value) : null;
-    if (targetIndex === null || isNaN(targetIndex) || !quest.trailPoints[targetIndex] || quest.trailPoints[targetIndex].isFrozen) {
-      // Pick the latest active unfrozen point index
-      targetIndex = -1;
-      for (let i = quest.trailPoints.length - 1; i >= 0; i--) {
-        if (!quest.trailPoints[i].isFrozen) {
+    const trail = quest.trailPoints || [];
+    const requestedKey = elements.behaviorTargetKey ? elements.behaviorTargetKey.value : '';
+    let targetIndex = requestedKey
+      ? trail.findIndex(p => p.pointKey === requestedKey && !p.isFrozen)
+      : -1;
+    if (targetIndex === -1 && elements.behaviorTargetIndex.value !== '') {
+      const idxNum = Number(elements.behaviorTargetIndex.value);
+      if (!isNaN(idxNum) && trail[idxNum] && !trail[idxNum].isFrozen) {
+        targetIndex = idxNum;
+      }
+    }
+    if (targetIndex === -1) {
+      for (let i = trail.length - 1; i >= 0; i--) {
+        if (!trail[i].isFrozen) {
           targetIndex = i;
           break;
         }
       }
     }
 
+    const targetPt = (targetIndex >= 0 && trail[targetIndex]) ? trail[targetIndex] : null;
     if (!Array.isArray(student.behaviorActions)) student.behaviorActions = [];
     student.behaviorActions.push({
       id: `beh_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -3049,6 +3114,8 @@
       reason,
       monthKey: state.selectedMonth,
       targetIndex: targetIndex >= 0 ? targetIndex : undefined,
+      targetPointKey: targetPt ? targetPt.pointKey : undefined,
+      targetTitle: targetPt ? `#${targetIndex + 1} ${targetPt.kind === 'mini_bundle' ? '5 Mini-Quizzes' : targetPt.title} (${targetPt.pct}%)` : undefined,
       createdAt: new Date().toISOString()
     });
 
@@ -3309,6 +3376,22 @@
 
     if (elements.behaviorActionForm) {
       elements.behaviorActionForm.addEventListener('submit', handleBehaviorFormSubmit);
+    }
+    if (elements.behaviorPointPicker) {
+      elements.behaviorPointPicker.addEventListener('click', (e) => {
+        const unfreezeBtn = e.target.closest('.btn-remove-behavior');
+        if (unfreezeBtn) {
+          removeBehaviorAction(unfreezeBtn.dataset.studentId, unfreezeBtn.dataset.actionId);
+          return;
+        }
+        const chip = e.target.closest('.behavior-point-chip.is-active');
+        if (chip) {
+          elements.behaviorPointPicker.querySelectorAll('.behavior-point-chip.is-active').forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+          if (elements.behaviorTargetIndex) elements.behaviorTargetIndex.value = chip.dataset.pointIndex || '';
+          if (elements.behaviorTargetKey) elements.behaviorTargetKey.value = chip.dataset.pointKey || '';
+        }
+      });
     }
     if (elements.behaviorQuickReasons) {
       elements.behaviorQuickReasons.addEventListener('click', (e) => {
