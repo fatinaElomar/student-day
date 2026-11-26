@@ -267,7 +267,8 @@
       dataManagement: 'Data Management',
       langToggleText: 'العربية',
       studentOfTheMonth: 'Student of the Month',
-      spotlightHint: 'Based on top monthly score & quiz consistency',
+      spotlightHint: 'Based on Quizzes Progress (10 / 10) & grade average',
+      quizzesProgressLabel: 'Quizzes Progress',
       spotlightEvaluating: 'Evaluating monthly rankings...',
       spotlightNoRecords: 'No graded records available for this month yet.',
       topMonthlyPerformer: 'Top Monthly Performer',
@@ -454,7 +455,8 @@
       dataManagement: 'إدارة البيانات',
       langToggleText: 'English',
       studentOfTheMonth: 'طالب الشهر المتميز',
-      spotlightHint: 'بناءً على أعلى درجة شهرية والمواظبة في الاختبارات',
+      spotlightHint: 'بناءً على تقدم المسابقات (10 / 10) ومعدل الدرجات',
+      quizzesProgressLabel: 'تقدم المسابقات',
       spotlightEvaluating: 'جارٍ تقييم تصنيفات الطلاب لهذا الشهر...',
       spotlightNoRecords: 'لا توجد سجلات درجات مرصودة لهذا الشهر بعد.',
       topMonthlyPerformer: 'الطالب المتصدر شهرياً',
@@ -1719,35 +1721,39 @@
   }
 
   /**
-   * Select Student of the Month by net points (quiz count) first,
-   * then monthly/effective grade average, then quiz percentage.
+   * Select Student of the Month primarily by Quizzes Progress % (capped at 10/10 = 100%),
+   * breaking ties by grade average (combinedAvg / monthly grade), then extra active points.
    */
   function selectTopStudent(students, monthKey) {
     let topCandidate = null;
-    let topPoints = -1;
+    let topProgress = -1;
+    let topCombinedAvg = -1;
     let topScore = -1;
-    let topQuizPct = -1;
+    let topPoints = -1;
 
     (students || []).forEach(student => {
       const trajectory = evaluateStudentTrajectory(student, monthKey);
       const quest = trajectory.giftQuest || evaluateGiftQuest(student, monthKey);
       if (!isEligibleForTopStudent(student, trajectory, quest)) return;
 
+      const currProgress = Number(quest.quizProgressPercent || 0);
       const effectiveScore = (trajectory.currentScore !== undefined && trajectory.currentScore !== null)
         ? Number(trajectory.currentScore)
         : Number(trajectory.quizPercent || 0);
+      const currCombinedAvg = Number(quest.combinedAvg || effectiveScore || 0);
       const currPoints = Number(quest.points || 0);
-      const currQuizPct = Number(trajectory.quizPercent || 0);
 
       const isBetter =
-        currPoints > topPoints ||
-        (currPoints === topPoints && effectiveScore > topScore) ||
-        (currPoints === topPoints && effectiveScore === topScore && currQuizPct > topQuizPct);
+        currProgress > topProgress ||
+        (currProgress === topProgress && currCombinedAvg > topCombinedAvg) ||
+        (currProgress === topProgress && currCombinedAvg === topCombinedAvg && effectiveScore > topScore) ||
+        (currProgress === topProgress && currCombinedAvg === topCombinedAvg && effectiveScore === topScore && currPoints > topPoints);
 
       if (isBetter) {
-        topPoints = currPoints;
+        topProgress = currProgress;
+        topCombinedAvg = currCombinedAvg;
         topScore = effectiveScore;
-        topQuizPct = currQuizPct;
+        topPoints = currPoints;
         topCandidate = { student, trajectory, quest };
       }
     });
@@ -1797,13 +1803,14 @@
       const initial = s.name.charAt(0).toUpperCase();
       const hasImg = Boolean(s.avatarUrl && s.avatarUrl.trim());
 
+      const progressPill = `<span class="winner-stat-pill">${t('quizzesProgressLabel')}: <span class="val">${winnerQuest.points} / ${GIFT_REQUIRED_QUIZZES} (${winnerQuest.quizProgressPercent}%)</span></span>`;
       const winnerStatsHtml = state.isAdmin
         ? `<span class="winner-stat-pill">${t('monthlyGrade')}: <span class="val">${traj.currentScore}%</span></span>
            <span class="winner-stat-pill">${t('quizScore')}: <span class="val">${traj.quizPercent}%</span></span>
-           <span class="winner-stat-pill">${t('totalPointsLabel')}: <span class="val">${winnerQuest.points}</span></span>`
+           ${progressPill}`
         : `<span class="winner-stat-pill"><svg class="svg-icon xs" viewBox="0 0 24 24"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg> ${t('topMonthlyPerformer')}</span>
            <span class="winner-stat-pill">${t('percentageLabel')}: <span class="val">${traj.quizPercent}%</span></span>
-           <span class="winner-stat-pill">${t('totalPointsLabel')}: <span class="val">${winnerQuest.points}</span></span>`;
+           ${progressPill}`;
 
       elements.spotlightContent.innerHTML = `
         <div class="spotlight-winner">
