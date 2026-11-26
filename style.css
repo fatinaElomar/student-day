@@ -1547,7 +1547,7 @@ body.light-theme .app-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-direction: column;
+  flex-direction: column !important;
 }
 
 .gift-avatar-mini {
