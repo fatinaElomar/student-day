@@ -30,6 +30,129 @@
   }
 
   // =========================================================================
+  // SUBJECT / QUIZ LOGO & ICON REGISTRY
+  // =========================================================================
+  const SUBJECT_REGISTRY = [
+    {
+      key: 'chemistry',
+      labelEn: 'Chemistry',
+      labelAr: 'كيمياء',
+      keywords: ['chymstry', 'chemistry', 'chym', 'chem', 'chimie', 'كيمياء', 'الكيمياء', 'كيميائي'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M9 3h6"/><path d="M10 3v5.4L4.6 18.2A2 2 0 0 0 6.3 21h11.4a2 2 0 0 0 1.7-2.8L14 8.4V3"/><path d="M7 15h10"/><circle cx="10.5" cy="17.5" r="0.8" fill="currentColor"/><circle cx="14" cy="18" r="0.6" fill="currentColor"/></svg>'
+    },
+    {
+      key: 'science',
+      labelEn: 'Science',
+      labelAr: 'علوم',
+      keywords: ['science', 'sciences', 'scince', 'sci', 'علوم', 'العلوم', 'طبيعة', 'طبيعية'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M6 18h8"/><path d="M3 22h18"/><path d="M14 22a7 7 0 1 0 0-14h-1"/><path d="M9 14h2"/><path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/><path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/></svg>'
+    },
+    {
+      key: 'physics',
+      labelEn: 'Physics',
+      labelAr: 'فيزياء',
+      keywords: ['physics', 'physique', 'phys', 'فيزياء', 'الفيزياء'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1.5" fill="currentColor"/><ellipse cx="12" cy="12" rx="9" ry="3.8" transform="rotate(45 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="3.8" transform="rotate(-45 12 12)"/></svg>'
+    },
+    {
+      key: 'biology',
+      labelEn: 'Biology',
+      labelAr: 'أحياء',
+      keywords: ['biology', 'biologie', 'bio', 'أحياء', 'احياء', 'الأحياء', 'الاحياء'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>'
+    },
+    {
+      key: 'math',
+      labelEn: 'Math',
+      labelAr: 'رياضيات',
+      keywords: ['mathematics', 'mathématique', 'maths', 'math', 'algebra', 'geometry', 'calculus', 'رياضيات', 'الرياضيات', 'جبر', 'هندسة', 'حساب'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M5 7h14"/><path d="M9 7v12"/><path d="M15 7v8a3 3 0 0 0 3 3"/><path d="M6 19c2-2 3-5 3-8"/></svg>'
+    },
+    {
+      key: 'arabic',
+      labelEn: 'Arabic',
+      labelAr: 'عربي',
+      keywords: ['arabic', 'arabe', 'arab', 'عربي', 'عربية', 'العربية', 'نحو', 'بلاغة', 'إملاء', 'املاء', 'قراءة', 'تعبير'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>'
+    },
+    {
+      key: 'english',
+      labelEn: 'English',
+      labelAr: 'إنجليزي',
+      keywords: ['english', 'anglais', 'eng', 'grammar', 'vocab', 'إنجليزي', 'انجليزي', 'انكليزي', 'الإنكليزية', 'الإنجليزية', 'الانجليزية'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M9 13l3-7 3 7"/><path d="M10 11h4"/></svg>'
+    },
+    {
+      key: 'french',
+      labelEn: 'French',
+      labelAr: 'فرنسي',
+      keywords: ['french', 'français', 'francais', 'فرنسي', 'فرنسية', 'الفرنسية'],
+      wordKeywords: ['fr'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>'
+    },
+    {
+      key: 'islamic',
+      labelEn: 'Islamic',
+      labelAr: 'إسلامية',
+      keywords: ['islamic', 'islam', 'quran', 'religion', 'إسلامية', 'اسلامية', 'الإسلامية', 'قرآن', 'دين', 'فقه', 'توحيد', 'تربية دينية'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/><polygon points="18 3 18.9 5.1 21 5.4 19.4 6.9 19.8 9 18 7.9 16.2 9 16.6 6.9 15 5.4 17.1 5.1 18 3" fill="currentColor"/></svg>'
+    },
+    {
+      key: 'history',
+      labelEn: 'History',
+      labelAr: 'تاريخ',
+      keywords: ['history', 'histoire', 'hist', 'تاريخ', 'التاريخ'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>'
+    },
+    {
+      key: 'geography',
+      labelEn: 'Geography',
+      labelAr: 'جغرافيا',
+      keywords: ['geography', 'géographie', 'geographie', 'geo', 'جغرافيا', 'الجغرافيا', 'اجتماعيات', 'الاجتماعيات', 'وطنية'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+    },
+    {
+      key: 'computer',
+      labelEn: 'Computer',
+      labelAr: 'حاسوب',
+      keywords: ['computer', 'comp', 'coding', 'programming', 'informatique', 'tech', 'حاسوب', 'الحاسوب', 'معلوماتية', 'برمجة', 'تقنية'],
+      wordKeywords: ['cs', 'it', 'ict'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>'
+    },
+    {
+      key: 'art',
+      labelEn: 'Art',
+      labelAr: 'فنية',
+      keywords: ['drawing', 'paint', 'فنية', 'رسم', 'تربية فنية'],
+      wordKeywords: ['art', 'arts'],
+      icon: '<svg class="svg-icon xs" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>'
+    }
+  ];
+
+  const DEFAULT_SUBJECT_META = {
+    key: 'default',
+    labelEn: 'Quiz',
+    labelAr: 'اختبار',
+    icon: '<svg class="svg-icon xs" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+  };
+
+  function getQuizSubjectMeta(title) {
+    const raw = String(title || '').trim().toLowerCase();
+    if (!raw) return DEFAULT_SUBJECT_META;
+    const words = raw.split(/[^a-z0-9\u0600-\u06FF]+/i).filter(Boolean);
+
+    for (const subj of SUBJECT_REGISTRY) {
+      if (subj.keywords && subj.keywords.some(kw => raw.includes(kw))) {
+        return subj;
+      }
+      if (subj.wordKeywords && subj.wordKeywords.some(w => words.includes(w))) {
+        return subj;
+      }
+    }
+    return DEFAULT_SUBJECT_META;
+  }
+
+  // =========================================================================
   // MODERN CRISP SVG ICON REGISTRY
   // =========================================================================
   const AppIcons = {
@@ -1074,6 +1197,7 @@
     let totalScoreSum = 0;
     let totalMaxSum = 0;
     let quizzesInTargetMonth = 0;
+    const earnedQuizzes = [];
 
     Array.from(monthKeys).sort().forEach(mKey => {
       if (upToMonthKey && mKey > upToMonthKey) return;
@@ -1108,11 +1232,19 @@
         if (isAvgEligiblePercent(quizPct)) {
           points++;
           goodCount++;
+          const rawTitle = (q.title || 'Quiz').trim() || 'Quiz';
+          earnedQuizzes.push({
+            title: rawTitle,
+            pct: Number(quizPct.toFixed(1)),
+            monthKey: mKey,
+            subject: getQuizSubjectMeta(rawTitle)
+          });
         } else {
           badCount++;
           if (points > 0) {
             points--;
             cancelledPoints++;
+            earnedQuizzes.pop();
           }
         }
       });
@@ -1153,7 +1285,8 @@
       avgRemaining,
       quizProgressPercent,
       avgBarPercent,
-      tier
+      tier,
+      earnedQuizzes
     };
   }
 
@@ -1196,12 +1329,23 @@
   function renderQuestStepsHtml(quest) {
     const filled = Math.min(GIFT_REQUIRED_QUIZZES, quest.points);
     const isUnlocked = quest.hasGift;
+    const earnedList = Array.isArray(quest.earnedQuizzes) ? quest.earnedQuizzes : [];
     let stepsHtml = '';
     for (let i = 1; i <= GIFT_REQUIRED_QUIZZES; i++) {
       const isEarned = i <= filled;
       const isNext = !isUnlocked && i === filled + 1;
-      const cls = isEarned ? 'earned' : (isNext ? 'next' : '');
-      stepsHtml += `<div class="quest-step-dot ${cls}" title="${i}/${GIFT_REQUIRED_QUIZZES}">${isEarned ? AppIcons.star : i}</div>`;
+      if (isEarned) {
+        const earnedQuiz = earnedList[i - 1] || null;
+        const meta = earnedQuiz ? (earnedQuiz.subject || getQuizSubjectMeta(earnedQuiz.title)) : DEFAULT_SUBJECT_META;
+        const subjectLabel = (state.lang === 'ar') ? meta.labelAr : meta.labelEn;
+        const dotTitle = earnedQuiz
+          ? `${escapeHtml(earnedQuiz.title)} (${earnedQuiz.pct}%) • ${i}/${GIFT_REQUIRED_QUIZZES}`
+          : `${subjectLabel} • ${i}/${GIFT_REQUIRED_QUIZZES}`;
+        stepsHtml += `<div class="quest-step-dot earned subject-${meta.key}" title="${dotTitle}">${meta.icon}</div>`;
+      } else {
+        const cls = isNext ? 'next' : '';
+        stepsHtml += `<div class="quest-step-dot ${cls}" title="${i}/${GIFT_REQUIRED_QUIZZES}">${i}</div>`;
+      }
     }
     const barFillClass = isUnlocked ? 'unlocked' : (quest.avgMet ? 'avg-met' : '');
     const isAr = (state.lang === 'ar');
@@ -2048,12 +2192,15 @@
       pillClass = good ? 'is-good' : 'is-low';
     }
 
-    const titlePlaceholder = (state.lang === 'ar') ? 'مثال: اختبار 1 أو واجب' : 'e.g. Quiz 1 or Test';
+    const titlePlaceholder = (state.lang === 'ar') ? 'مثال: علوم، رياضيات، عربي، كيمياء...' : 'e.g. Science, Math, Arabic, Chemistry...';
+    const subjMeta = getQuizSubjectMeta(quiz.title || '');
+    const subjLabel = (state.lang === 'ar') ? subjMeta.labelAr : subjMeta.labelEn;
 
     return `
       <div class="quiz-item-row">
         <div class="quiz-col-input-name">
-          <input type="text" class="form-input form-input-sm quiz-name-input" placeholder="${titlePlaceholder}" value="${titleVal}" required>
+          <span class="quiz-subject-badge subject-${subjMeta.key}" title="${escapeHtml(subjLabel)}">${subjMeta.icon}</span>
+          <input type="text" class="form-input form-input-sm quiz-name-input" list="quiz-subject-suggestions" placeholder="${titlePlaceholder}" value="${titleVal}" required>
         </div>
         <div class="quiz-col-input-score">
           <input type="number" class="form-input form-input-sm quiz-score-input" min="0" max="1000" step="0.5" placeholder="Score" value="${scoreVal}" required>
@@ -2125,6 +2272,13 @@
       const pctBadge = row.querySelector('.quiz-row-pct-pill');
 
       const title = nameInput ? nameInput.value.trim() : (state.lang === 'ar' ? 'اختبار' : 'Quiz');
+      const subjBadge = row.querySelector('.quiz-subject-badge');
+      if (subjBadge) {
+        const subjMeta = getQuizSubjectMeta(title);
+        subjBadge.className = `quiz-subject-badge subject-${subjMeta.key}`;
+        subjBadge.title = (state.lang === 'ar') ? subjMeta.labelAr : subjMeta.labelEn;
+        subjBadge.innerHTML = subjMeta.icon;
+      }
       const scoreRaw = scoreInput ? scoreInput.value : '';
       const maxRaw = maxInput ? maxInput.value : '20';
 
@@ -2403,7 +2557,8 @@
                 ${rec.quizzes.map(q => {
                   const pct = q.maxScore > 0 ? (q.score / q.maxScore) * 100 : 0;
                   const starMark = isAvgEligiblePercent(pct) ? ' ⭐' : '';
-                  return `<span class="quiz-breakdown-tag" title="${escapeHtml(q.title)}: ${q.score}/${q.maxScore}">${escapeHtml(q.title)}: ${q.score}/${q.maxScore}${starMark}</span>`;
+                  const subjMeta = getQuizSubjectMeta(q.title);
+                  return `<span class="quiz-breakdown-tag" title="${escapeHtml(q.title)}: ${q.score}/${q.maxScore}"><span class="quiz-tag-icon subject-${subjMeta.key}">${subjMeta.icon}</span>${escapeHtml(q.title)}: ${q.score}/${q.maxScore}${starMark}</span>`;
                 }).join('')}
               </div>
             `;
