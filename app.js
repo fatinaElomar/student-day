@@ -26,7 +26,7 @@
   const GIFT_MIN_AVG_PERCENT = 70.0; // Combined final average across quizzes must be >= 70%
   const GIFT_CANCEL_BELOW_PERCENT = 50.0; // Score < 50% permanently cancels 1 earned point
   const MINI_QUIZ_MAX_THRESHOLD = 10; // Quizzes with maxScore < 10 are mini-quizzes
-  const MINI_QUIZZES_PER_POINT = 5; // Every 5 good mini-quizzes count as 1 full point
+  const MINI_QUIZZES_PER_POINT = 4; // Every 4 good mini-quizzes count as 1 full point
 
   function isAvgEligiblePercent(pct) {
     return Number(pct) >= GIFT_MIN_AVG_PERCENT;
@@ -283,7 +283,7 @@
       goodQuizMinHint: '(Combined Avg ≥ 70%)',
       goodQuizzesMonthLabel: 'Quizzes Count',
       qualifiedCount: '{n} Unlocked',
-      giftRewardNote: 'Only students with ≥ 1 net point and ≥ 70% average appear; scores < 50% cancel 1 point permanently. Mini-quizzes (< 10) count 5 = 1 point. Paused points show reason on hover/click.',
+      giftRewardNote: 'Only students with ≥ 1 net point and ≥ 70% average appear; scores < 50% cancel 1 point permanently. Mini-quizzes (< 10) count 4 = 1 point. Paused points show reason on hover/click.',
       noGiftWinners: 'No students qualify yet — requires ≥ 1 good quiz and ≥ 70% average to appear!',
       classMomentum: 'Class Momentum',
       classMomentumDesc: 'Trajectory vs. Previous Month',
@@ -319,7 +319,7 @@
       resetFilters: 'Reset Filters',
       rulesTitle: 'System Rules & Performance Criteria',
       giftAwardBadge: 'Gift Award',
-      giftRuleDesc: 'Only ≥ 70% earns a point (mini-quizzes < 10 count 5 = 1 pt); < 50% cancels 1 point permanently. Admin may pause (freeze) or cancel points for behavior. Win at 10 active points & ≥ 70% avg.',
+      giftRuleDesc: 'Only ≥ 70% earns a point (mini-quizzes < 10 count 4 = 1 pt); < 50% cancels 1 point permanently. Admin may pause (freeze) or cancel points for behavior. Win at 10 active points & ≥ 70% avg.',
       forwardRuleDesc: 'Student is progressing! Monthly score increased compared to the previous month.',
       backwardRuleDesc: 'Regression alert! Monthly score dropped from the previous month. Requires teacher guidance.',
       stagnantRuleDesc: 'Student is inactive, showed 0 progress, or grades consistently below minimum passing standards.',
@@ -471,7 +471,7 @@
       goodQuizMinHint: '(بمعدل نهائي 70% أو فوق)',
       goodQuizzesMonthLabel: 'عدد المسابقات',
       qualifiedCount: '{n} فائز',
-      giftRewardNote: 'يظهر فقط من لديه نقطة واحدة على الأقل ومعدل 70% أو فوق — العلامة تحت 50% تلغي نقطة نهائياً، وكل 5 اختبارات صغيرة (< 10) تحسب كنقطة، والنقطة الموقفة يظهر سببها عند التمرير أو الضغط.',
+      giftRewardNote: 'يظهر فقط من لديه نقطة واحدة على الأقل ومعدل 70% أو فوق — العلامة تحت 50% تلغي نقطة نهائياً، وكل 4 اختبارات صغيرة (< 10) تحسب كنقطة، والنقطة الموقفة يظهر سببها عند التمرير أو الضغط.',
       noGiftWinners: 'لا يوجد طلاب مستحقون حالياً — يتطلب علامة جيدة واحدة على الأقل ومعدل 70% أو فوق للظهور هنا!',
       classMomentum: 'مؤشر تقدم الفصل',
       classMomentumDesc: 'المسار مقارنة بالشهر السابق',
@@ -507,7 +507,7 @@
       resetFilters: 'إعادة تعيين الفلاتر',
       rulesTitle: 'قواعد النظام ومعايير الأداء الأكاديمي',
       giftAwardBadge: 'جائزة التميز',
-      giftRuleDesc: 'العلامة ≥70% تمنح نقطة (كل 5 اختبارات صغيرة <10 تحسب كنقطة)، وتحت 50% تلغي نقطة نهائياً. يمكن للمسؤول تجميد أو إلغاء نقطة للسلوك، والفوز عند 10 نقاط فعالة ومعدل ≥70%.',
+      giftRuleDesc: 'العلامة ≥70% تمنح نقطة (كل 4 اختبارات صغيرة <10 تحسب كنقطة)، وتحت 50% تلغي نقطة نهائياً. يمكن للمسؤول تجميد أو إلغاء نقطة للسلوك، والفوز عند 10 نقاط فعالة ومعدل ≥70%.',
       forwardRuleDesc: 'الطالب في مسار تصاعدي! ارتفعت درجاته مقارنة بالشهر السابق.',
       backwardRuleDesc: 'تنبيه تراجع! انخفضت الدرجة عن الشهر السابق، يحتاج إلى دعم وإرشاد.',
       stagnantRuleDesc: 'الطالب غير نشط، لم يحرز تقدماً، أو درجاته دون مستوى النجاح.',
@@ -1350,7 +1350,7 @@
               miniGoodPool.pop();
               miniCancelledCount++;
             } else {
-              // Unbundle the most recent mini-bundle if present (5 -> 4 mini-quizzes)
+              // Unbundle the most recent mini-bundle if present (4 -> 3 mini-quizzes)
               let bundleIdx = -1;
               for (let idx = trailPoints.length - 1; idx >= 0; idx--) {
                 if (trailPoints[idx].kind === 'mini_bundle') {
@@ -1501,7 +1501,7 @@
       notes.push(isAr ? `${quest.frozenCount} موقفة` : `${quest.frozenCount} paused`);
     }
     if (quest.miniBufferCount > 0) {
-      notes.push(isAr ? `${quest.miniBufferCount}/5 صغار` : `${quest.miniBufferCount}/5 mini`);
+      notes.push(isAr ? `${quest.miniBufferCount}/${MINI_QUIZZES_PER_POINT} صغار` : `${quest.miniBufferCount}/${MINI_QUIZZES_PER_POINT} mini`);
     }
     const extraNote = notes.length > 0 ? ` • (${notes.join(' • ')})` : '';
 
@@ -1560,9 +1560,9 @@
       } else if (pt) {
         activeNum++;
         const meta = pt.subject || getQuizSubjectMeta(pt.title);
-        const miniMark = pt.kind === 'mini_bundle' ? '<span class="dot-mini-x5">×5</span>' : '';
+        const miniMark = pt.kind === 'mini_bundle' ? `<span class="dot-mini-x5">×${MINI_QUIZZES_PER_POINT}</span>` : '';
         const dotTitle = pt.kind === 'mini_bundle'
-          ? `${isAr ? '5 اختبارات صغيرة' : '5 Mini-Quizzes'}: ${escapeHtml(pt.title)} (${pt.pct}%) • ${activeNum}/${GIFT_REQUIRED_QUIZZES}`
+          ? `${isAr ? `${MINI_QUIZZES_PER_POINT} اختبارات صغيرة` : `${MINI_QUIZZES_PER_POINT} Mini-Quizzes`}: ${escapeHtml(pt.title)} (${pt.pct}%) • ${activeNum}/${GIFT_REQUIRED_QUIZZES}`
           : `${escapeHtml(pt.title)} (${pt.pct}%) • ${activeNum}/${GIFT_REQUIRED_QUIZZES}${state.isAdmin ? (isAr ? ' • اضغط للتجميد أو الإلغاء' : ' • Click to freeze/cancel') : ''}`;
         stepsHtml += `
           <div class="quest-step-dot earned subject-${meta.key} ${pt.kind === 'mini_bundle' ? 'is-mini-bundle' : ''} ${state.isAdmin ? 'is-admin-dot' : ''}"
@@ -1583,7 +1583,7 @@
 
     const barFillClass = isUnlocked ? 'unlocked' : (quest.avgMet ? 'avg-met' : '');
 
-    // Compact status chips for frozen points, mini-quiz 5-count buffer, or behavior cancellations
+    // Compact status chips for frozen points, mini-quiz buffer, or behavior cancellations
     const statusChips = [];
     if (quest.frozenCount > 0) {
       statusChips.push(`<span class="quest-status-chip is-frozen">${AppIcons.snowflake} ${quest.frozenCount} ${isAr ? 'نقطة موقفة (اضغط عليها للسبب)' : 'Paused (click dot for reason)'}</span>`);
@@ -1593,7 +1593,7 @@
       for (let m = 1; m <= MINI_QUIZZES_PER_POINT; m++) {
         pips += `<span class="mini-pip ${m <= quest.miniBufferCount ? 'filled' : ''}"></span>`;
       }
-      statusChips.push(`<span class="quest-status-chip is-mini" title="${isAr ? 'كل 5 اختبارات صغيرة (<10) = نقطة واحدة' : 'Every 5 mini-quizzes (<10) = 1 point'}">⚡ ${quest.miniBufferCount}/${MINI_QUIZZES_PER_POINT} ${isAr ? 'صغار' : 'mini'} <span class="mini-pips-wrap">${pips}</span></span>`);
+      statusChips.push(`<span class="quest-status-chip is-mini" title="${isAr ? `كل ${MINI_QUIZZES_PER_POINT} اختبارات صغيرة (<10) = نقطة واحدة` : `Every ${MINI_QUIZZES_PER_POINT} mini-quizzes (<10) = 1 point`}">⚡ ${quest.miniBufferCount}/${MINI_QUIZZES_PER_POINT} ${isAr ? 'صغار' : 'mini'} <span class="mini-pips-wrap">${pips}</span></span>`);
     }
     if (quest.behaviorCancelledCount > 0) {
       statusChips.push(`<span class="quest-status-chip is-cancelled">🚫 ${quest.behaviorCancelledCount} ${isAr ? 'ملغاة سلوكياً' : 'behavior cancelled'}</span>`);
@@ -1716,7 +1716,7 @@
   // =========================================================================
   function isEligibleForTopStudent(student, trajectory, quest) {
     if (!student || !trajectory || !trajectory.hasRecord) return false;
-    // Must have at least 1 active point (e.g., a single mini-quiz < 10 has 0 points until 5 = 1 pt)
+    // Must have at least 1 active point (e.g., a single mini-quiz < 10 has 0 points until 4 = 1 pt)
     return Boolean(quest && quest.points >= 1);
   }
 
@@ -2035,7 +2035,7 @@
         cardExtras.push(state.lang === 'ar' ? `❄️ ${quest.frozenCount} موقفة` : `❄️ ${quest.frozenCount} paused`);
       }
       if (quest.miniBufferCount > 0) {
-        cardExtras.push(state.lang === 'ar' ? `⚡ ${quest.miniBufferCount}/5 صغار` : `⚡ ${quest.miniBufferCount}/5 mini`);
+        cardExtras.push(state.lang === 'ar' ? `⚡ ${quest.miniBufferCount}/${MINI_QUIZZES_PER_POINT} صغار` : `⚡ ${quest.miniBufferCount}/${MINI_QUIZZES_PER_POINT} mini`);
       }
       const cardExtraText = cardExtras.length > 0 ? `<div class="card-quest-subchips">${cardExtras.join(' • ')}</div>` : '';
 
@@ -2476,21 +2476,21 @@
       const pctNum = Number(((Number(scoreVal) / Number(maxVal)) * 100).toFixed(1));
       const good = isAvgEligiblePercent(pctNum);
       const badCancel = isBadCancelPercent(pctNum);
-      rowPct = `${pctNum}%${good ? (isMini ? ' ⅕' : ' ⭐') : (badCancel ? ' ✕' : '')}`;
+      rowPct = `${pctNum}%${good ? (isMini ? ' ¼' : ' ⭐') : (badCancel ? ' ✕' : '')}`;
       pillClass = good ? 'is-good' : (badCancel ? 'is-low' : 'is-mid');
     }
 
     const titlePlaceholder = (state.lang === 'ar') ? 'مثال: علوم، رياضيات، عربي، كيمياء...' : 'e.g. Science, Math, Arabic, Chemistry...';
     const subjMeta = getQuizSubjectMeta(quiz.title || '');
     const subjLabel = (state.lang === 'ar') ? subjMeta.labelAr : subjMeta.labelEn;
-    const miniTitle = (state.lang === 'ar') ? 'اختبار صغير (<10): كل 5 = نقطة' : 'Mini quiz (<10): 5 = 1 point';
+    const miniTitle = (state.lang === 'ar') ? `اختبار صغير (<10): كل ${MINI_QUIZZES_PER_POINT} = نقطة` : `Mini quiz (<10): ${MINI_QUIZZES_PER_POINT} = 1 point`;
 
     return `
       <div class="quiz-item-row ${isMini ? 'is-mini-row' : ''}">
         <div class="quiz-col-input-name">
           <span class="quiz-subject-badge subject-${subjMeta.key}" title="${escapeHtml(subjLabel)}">${subjMeta.icon}</span>
           <input type="text" class="form-input form-input-sm quiz-name-input" list="quiz-subject-suggestions" placeholder="${titlePlaceholder}" value="${titleVal}" required>
-          <span class="quiz-mini-tag" style="${isMini ? '' : 'display:none;'}" title="${miniTitle}">1/5</span>
+          <span class="quiz-mini-tag" style="${isMini ? '' : 'display:none;'}" title="${miniTitle}">1/${MINI_QUIZZES_PER_POINT}</span>
         </div>
         <div class="quiz-col-input-score">
           <input type="number" class="form-input form-input-sm quiz-score-input" min="0" max="1000" step="0.5" placeholder="Score" value="${scoreVal}" required>
@@ -2584,7 +2584,7 @@
         const isGood = isAvgEligiblePercent(rowPct);
         const isBadCancel = isBadCancelPercent(rowPct);
         if (pctBadge) {
-          pctBadge.textContent = `${rowPct}%${isGood ? (isMini ? ' ⅕' : ' ⭐') : (isBadCancel ? ' ✕' : '')}`;
+          pctBadge.textContent = `${rowPct}%${isGood ? (isMini ? ' ¼' : ' ⭐') : (isBadCancel ? ' ✕' : '')}`;
           pctBadge.classList.toggle('is-good', isGood);
           pctBadge.classList.toggle('is-low', isBadCancel);
           pctBadge.classList.toggle('is-mid', !isGood && !isBadCancel);
@@ -3033,7 +3033,7 @@
         elements.behaviorPointPicker.innerHTML = trail.map((pt, idx) => {
           const meta = pt.subject || getQuizSubjectMeta(pt.title);
           const shortTitle = pt.kind === 'mini_bundle'
-            ? (isAr ? '5 صغار' : '5 Mini')
+            ? (isAr ? `${MINI_QUIZZES_PER_POINT} صغار` : `${MINI_QUIZZES_PER_POINT} Mini`)
             : pt.title;
           if (pt.isFrozen) {
             return `
@@ -3121,7 +3121,7 @@
       monthKey: state.selectedMonth,
       targetIndex: targetIndex >= 0 ? targetIndex : undefined,
       targetPointKey: targetPt ? targetPt.pointKey : undefined,
-      targetTitle: targetPt ? `#${targetIndex + 1} ${targetPt.kind === 'mini_bundle' ? '5 Mini-Quizzes' : targetPt.title} (${targetPt.pct}%)` : undefined,
+      targetTitle: targetPt ? `#${targetIndex + 1} ${targetPt.kind === 'mini_bundle' ? `${MINI_QUIZZES_PER_POINT} Mini-Quizzes` : targetPt.title} (${targetPt.pct}%)` : undefined,
       createdAt: new Date().toISOString()
     });
 
