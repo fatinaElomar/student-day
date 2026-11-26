@@ -1710,6 +1710,12 @@
   // =========================================================================
   // MONTHLY HIGHLIGHTS & SUMMARY RENDERING
   // =========================================================================
+  function isEligibleForTopStudent(student, trajectory, quest) {
+    if (!student || !trajectory || !trajectory.hasRecord) return false;
+    // Must have at least 1 active point (e.g., a single mini-quiz < 10 has 0 points until 5 = 1 pt)
+    return Boolean(quest && quest.points >= 1);
+  }
+
   function renderHighlights() {
     const monthKey = state.selectedMonth;
     const isAr = (state.lang === 'ar');
@@ -1739,18 +1745,22 @@
       recordedStudentCount++;
       totalScoreSum += trajectory.currentScore;
 
-      // Student of the Month strictly depends on highest grades / combined percentage
-      const effectiveScore = (trajectory.currentScore !== undefined && trajectory.currentScore !== null)
-        ? Number(trajectory.currentScore)
-        : Number(trajectory.quizPercent || 0);
+      // Student of the Month strictly depends on highest grades / combined percentage AND >= 1 point
+      if (isEligibleForTopStudent(student, trajectory, quest)) {
+        const effectiveScore = (trajectory.currentScore !== undefined && trajectory.currentScore !== null)
+          ? Number(trajectory.currentScore)
+          : Number(trajectory.quizPercent || 0);
 
-      if (effectiveScore > topScore) {
-        topScore = effectiveScore;
-        topStudent = { student, trajectory };
-      } else if (effectiveScore === topScore && topStudent) {
-        // Tie-breaker: higher quiz percentage or total score
-        if (Number(trajectory.quizPercent || 0) > Number(topStudent.trajectory.quizPercent || 0)) {
+        if (effectiveScore > topScore) {
+          topScore = effectiveScore;
           topStudent = { student, trajectory };
+        } else if (effectiveScore === topScore && topStudent) {
+          // Tie-breaker: higher quiz percentage or more points
+          const currQuizPct = Number(trajectory.quizPercent || 0);
+          const bestQuizPct = Number(topStudent.trajectory.quizPercent || 0);
+          if (currQuizPct > bestQuizPct) {
+            topStudent = { student, trajectory };
+          }
         }
       }
 
@@ -1872,13 +1882,21 @@
     const monthKey = state.selectedMonth;
     const query = state.searchQuery.trim().toLowerCase();
 
-    // Determine Top Student ID for spotlight styling
+    // Determine Top Student ID for spotlight styling (must have >= 1 point)
     let topStudentId = null;
     let highestScore = -1;
+    let highestQuizPct = -1;
     state.students.forEach(s => {
-      const rec = s.records ? s.records[monthKey] : null;
-      if (rec && rec.overallScore > highestScore) {
-        highestScore = rec.overallScore;
+      const traj = evaluateStudentTrajectory(s, monthKey);
+      const quest = traj.giftQuest || evaluateGiftQuest(s, monthKey);
+      if (!isEligibleForTopStudent(s, traj, quest)) return;
+      const effectiveScore = (traj.currentScore !== undefined && traj.currentScore !== null)
+        ? Number(traj.currentScore)
+        : Number(traj.quizPercent || 0);
+      const qPct = Number(traj.quizPercent || 0);
+      if (effectiveScore > highestScore || (effectiveScore === highestScore && qPct > highestQuizPct)) {
+        highestScore = effectiveScore;
+        highestQuizPct = qPct;
         topStudentId = s.id;
       }
     });
