@@ -699,6 +699,9 @@
     spotlightContent: document.getElementById('spotlight-content'),
     btnCelebrate: document.getElementById('btn-celebrate'),
     giftQualifiedList: document.getElementById('gift-qualified-list'),
+    giftCarouselPrev: document.getElementById('gift-carousel-prev'),
+    giftCarouselNext: document.getElementById('gift-carousel-next'),
+    giftCarouselDots: document.getElementById('gift-carousel-dots'),
     giftCountBadge: document.getElementById('gift-count-badge'),
     giftThresholdDisplay: document.getElementById('gift-threshold-display'),
 
@@ -1896,6 +1899,99 @@
     if (elements.countStagnant) elements.countStagnant.textContent = stagnantCount;
     if (elements.countGift) elements.countGift.textContent = giftWinnersCount;
     if (elements.countQuest) elements.countQuest.textContent = questInProgressCount;
+
+    // 4. Update Gift Quest Carousel navigation
+    updateGiftCarousel();
+  }
+
+  // =========================================================================
+  // GIFT QUEST CAROUSEL NAVIGATION
+  // =========================================================================
+  function updateGiftCarousel() {
+    const list = elements.giftQualifiedList;
+    if (!list) return;
+
+    const items = list.querySelectorAll('.gift-quest-item');
+    const totalItems = items.length;
+
+    // Update carousel dots
+    if (elements.giftCarouselDots) {
+      if (totalItems <= 1) {
+        elements.giftCarouselDots.innerHTML = '';
+      } else {
+        elements.giftCarouselDots.innerHTML = Array.from({ length: totalItems }, (_, i) =>
+          `<button class="gift-carousel-dot ${i === 0 ? 'active' : ''}" data-index="${i}" aria-label="Go to card ${i + 1}"></button>`
+        ).join('');
+      }
+    }
+
+    updateCarouselButtons();
+
+    // Scroll listener to update active dot + buttons
+    list.onscroll = () => updateCarouselButtons();
+  }
+
+  function getCarouselActiveIndex() {
+    const list = elements.giftQualifiedList;
+    if (!list) return 0;
+    const items = list.querySelectorAll('.gift-quest-item');
+    if (items.length === 0) return 0;
+    const listRect = list.getBoundingClientRect();
+    const listCenter = listRect.left + listRect.width / 2;
+    let closestIdx = 0;
+    let closestDist = Infinity;
+    items.forEach((item, idx) => {
+      const itemRect = item.getBoundingClientRect();
+      const itemCenter = itemRect.left + itemRect.width / 2;
+      const dist = Math.abs(itemCenter - listCenter);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestIdx = idx;
+      }
+    });
+    return closestIdx;
+  }
+
+  function updateCarouselButtons() {
+    const list = elements.giftQualifiedList;
+    if (!list) return;
+    const items = list.querySelectorAll('.gift-quest-item');
+    const activeIdx = getCarouselActiveIndex();
+    const totalItems = items.length;
+
+    if (elements.giftCarouselPrev) {
+      elements.giftCarouselPrev.disabled = (activeIdx <= 0 || totalItems <= 1);
+    }
+    if (elements.giftCarouselNext) {
+      elements.giftCarouselNext.disabled = (activeIdx >= totalItems - 1 || totalItems <= 1);
+    }
+
+    // Update dots
+    if (elements.giftCarouselDots) {
+      const dots = elements.giftCarouselDots.querySelectorAll('.gift-carousel-dot');
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle('active', idx === activeIdx);
+      });
+    }
+  }
+
+  function scrollGiftCarousel(direction) {
+    const list = elements.giftQualifiedList;
+    if (!list) return;
+    const items = list.querySelectorAll('.gift-quest-item');
+    if (items.length === 0) return;
+    const activeIdx = getCarouselActiveIndex();
+    const targetIdx = Math.max(0, Math.min(items.length - 1, activeIdx + direction));
+    items[targetIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  function scrollGiftCarouselTo(index) {
+    const list = elements.giftQualifiedList;
+    if (!list) return;
+    const items = list.querySelectorAll('.gift-quest-item');
+    if (index >= 0 && index < items.length) {
+      items[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
   }
 
   // =========================================================================
@@ -3370,6 +3466,22 @@
             e.preventDefault();
             openStudentDetailModal(card.dataset.studentId);
           }
+        }
+      });
+    }
+
+    // Gift Quest Carousel navigation
+    if (elements.giftCarouselPrev) {
+      elements.giftCarouselPrev.addEventListener('click', () => scrollGiftCarousel(-1));
+    }
+    if (elements.giftCarouselNext) {
+      elements.giftCarouselNext.addEventListener('click', () => scrollGiftCarousel(1));
+    }
+    if (elements.giftCarouselDots) {
+      elements.giftCarouselDots.addEventListener('click', (e) => {
+        const dot = e.target.closest('.gift-carousel-dot');
+        if (dot && dot.dataset.index !== undefined) {
+          scrollGiftCarouselTo(Number(dot.dataset.index));
         }
       });
     }

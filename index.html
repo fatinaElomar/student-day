@@ -182,9 +182,18 @@
           </div>
         </div>
         
-        <div class="gift-qualified-list gift-quest-list" id="gift-qualified-list">
-          <!-- Interactive game-style progress list for each student -->
+        <div class="gift-carousel-wrapper">
+          <button class="gift-carousel-btn" id="gift-carousel-prev" aria-label="Previous" disabled>
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="gift-qualified-list gift-quest-list" id="gift-qualified-list">
+            <!-- Interactive game-style carousel for each student -->
+          </div>
+          <button class="gift-carousel-btn" id="gift-carousel-next" aria-label="Next">
+            <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+          </button>
         </div>
+        <div class="gift-carousel-dots" id="gift-carousel-dots"></div>
       </div>
 
       <!-- 3. Progress Velocity & Momentum Tracker Summary -->
