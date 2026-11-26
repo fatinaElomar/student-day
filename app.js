@@ -1407,11 +1407,6 @@
     if (elements.giftThresholdDisplay) {
       elements.giftThresholdDisplay.textContent = `${GIFT_REQUIRED_QUIZZES}`;
     }
-    if (elements.giftCountBadge) {
-      elements.giftCountBadge.textContent = isAr
-        ? `${giftWinnersCount} سيحصل على جائزة • ${questInProgressCount} قيد التقدم`
-        : `${giftWinnersCount} Unlocked • ${questInProgressCount} In Quest`;
-    }
 
     // Sort: unlocked first, then highest net points, then highest combined average
     questItems.sort((a, b) => {
