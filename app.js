@@ -1438,9 +1438,6 @@
           tierText = isAr ? `🚀 متبقي ${quest.quizzesRemaining}` : `🚀 ${quest.quizzesRemaining} left`;
         }
 
-        const hintText = buildQuestRemainingText(quest);
-        const countLabel = `${quest.points} / ${GIFT_REQUIRED_QUIZZES} ⭐`;
-
         return `
           <div class="gift-quest-item ${quest.hasGift ? 'is-unlocked' : ''}" data-student-id="${student.id}" role="button" tabindex="0" title="${escapeHtml(student.name)}">
             <div class="gift-quest-top">
@@ -1455,11 +1452,6 @@
             </div>
 
             ${renderQuestStepsHtml(quest)}
-
-            <div class="quest-progress-meta">
-              <span>${hintText}</span>
-              <span class="quest-progress-count">${countLabel}</span>
-            </div>
           </div>
         `;
       }).join('');
@@ -1635,7 +1627,6 @@
           <div class="quest-bar-track" title="${quest.points}/${GIFT_REQUIRED_QUIZZES} (${quest.quizProgressPercent}%)">
             <div class="quest-bar-fill ${quest.hasGift ? 'unlocked' : (quest.avgMet ? 'avg-met' : '')}" style="width: ${quest.quizProgressPercent}%;"></div>
           </div>
-          <div style="font-size: 0.72rem; color: var(--text-secondary);">${buildQuestRemainingText(quest)}</div>
         </div>
       ` : '';
 
@@ -2380,8 +2371,6 @@
         const questTitle = isAr
           ? 'سباق الجائزة (10 نقاط ≥ 70%)'
           : 'Gift Quest Progress (10 Points ≥ 70%)';
-        const questStatusMsg = buildQuestRemainingText(overallQuest);
-
         elements.detailGiftQuestBoard.style.display = 'block';
         elements.detailGiftQuestBoard.innerHTML = `
           <div class="detail-quest-header">
@@ -2389,10 +2378,6 @@
             <span class="gift-quest-tier ${overallQuest.tier}">${overallQuest.points} / ${GIFT_REQUIRED_QUIZZES} • ${overallQuest.combinedAvg}%</span>
           </div>
           ${renderQuestStepsHtml(overallQuest)}
-          <div class="quest-progress-meta" style="margin-top: 8px;">
-            <span>${questStatusMsg}</span>
-            <span class="quest-progress-count">${overallQuest.quizProgressPercent}%</span>
-          </div>
         `;
       } else {
         elements.detailGiftQuestBoard.style.display = 'none';
